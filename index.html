@@ -21,7 +21,8 @@
     <title>Documentation Viewer | Stage</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Literata:opsz,wght@7..72,450;7..72,600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Literata:opsz,wght@7..72,450;7..72,600&family=Lexend:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Dyslexic:400,700">
     <link id="hljs-light-theme" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/styles/github.min.css">
     <link id="hljs-dark-theme" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/styles/github-dark.min.css" disabled>
     <script>document.write('<link rel="stylesheet" href="style.css?v='+Date.now()+'">'); </script>
@@ -92,6 +93,9 @@
                         <i data-lucide="sun-moon"></i>
                         Thème: Système
                     </button>
+                    <button id="accessibility-btn" name="accessibility-btn" type="button" class="btn-accessibility" aria-label="Ouvrir le menu d'accessibilité pour dyslexiques" title="Accessibilité">
+                        <i data-lucide="accessibility"></i>
+                    </button>
                 </div>
             </header>
 
@@ -124,6 +128,131 @@
         <div class="consent-actions">
             <button id="consent-deny" name="consent-deny" type="button" class="btn-secondary" aria-label="Refuser l'enregistrement local">Refuser</button>
             <button id="consent-allow" name="consent-allow" type="button" class="btn-primary" aria-label="Accepter l'enregistrement local">Accepter</button>
+        </div>
+    </aside>
+
+    <aside id="accessibility-modal" class="accessibility-modal" role="dialog" aria-modal="true" aria-labelledby="accessibility-title" hidden>
+        <div class="accessibility-panel">
+            <div class="accessibility-header">
+                <h2 id="accessibility-title">Accessibilité - Dyslexie</h2>
+                <button id="close-accessibility" name="close-accessibility" type="button" class="icon-btn" aria-label="Fermer le menu d'accessibilité">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+
+            <div class="accessibility-content">
+                <!-- Ajustements textuels -->
+                <section class="accessibility-section">
+                    <h3><i data-lucide="type"></i> Ajustements Textuels</h3>
+                    
+                    <div class="accessibility-group">
+                        <label for="font-family">Police de caractère</label>
+                        <select id="font-family" name="font-family" aria-label="Changer la police de caractère">
+                            <option value="default">Police par défaut</option>
+                            <option value="opendyslexic">OpenDyslexic (recommandée)</option>
+                            <option value="lexend">Lexend (recommandée)</option>
+                            <option value="arial">Arial</option>
+                        </select>
+                    </div>
+
+                    <div class="accessibility-group">
+                        <label for="font-size">Taille du texte</label>
+                        <div class="range-input">
+                            <button type="button" class="range-btn" id="font-size-minus" aria-label="Réduire la taille">−</button>
+                            <input type="range" id="font-size" name="font-size" min="-15" max="25" value="0" step="1" aria-label="Taille du texte">
+                            <span id="font-size-value" class="range-value">0%</span>
+                            <button type="button" class="range-btn" id="font-size-plus" aria-label="Augmenter la taille">+</button>
+                        </div>
+                    </div>
+
+                    <div class="accessibility-group">
+                        <label for="line-height">Espacement des lignes</label>
+                        <div class="range-input">
+                            <button type="button" class="range-btn" id="line-height-minus" aria-label="Réduire l'espacement">−</button>
+                            <input type="range" id="line-height" name="line-height" min="0" max="30" value="0" step="2" aria-label="Espacement des lignes">
+                            <span id="line-height-value" class="range-value">0%</span>
+                            <button type="button" class="range-btn" id="line-height-plus" aria-label="Augmenter l'espacement">+</button>
+                        </div>
+                    </div>
+
+                    <div class="accessibility-group">
+                        <label for="letter-spacing">Espacement des lettres</label>
+                        <div class="range-input">
+                            <button type="button" class="range-btn" id="letter-spacing-minus" aria-label="Réduire l'espacement">−</button>
+                            <input type="range" id="letter-spacing" name="letter-spacing" min="0" max="15" value="0" step="1" aria-label="Espacement des lettres">
+                            <span id="letter-spacing-value" class="range-value">0%</span>
+                            <button type="button" class="range-btn" id="letter-spacing-plus" aria-label="Augmenter l'espacement">+</button>
+                        </div>
+                    </div>
+
+                    <div class="accessibility-group">
+                        <label for="word-spacing">Espacement des mots</label>
+                        <div class="range-input">
+                            <button type="button" class="range-btn" id="word-spacing-minus" aria-label="Réduire l'espacement">−</button>
+                            <input type="range" id="word-spacing" name="word-spacing" min="0" max="25" value="0" step="1" aria-label="Espacement des mots">
+                            <span id="word-spacing-value" class="range-value">0%</span>
+                            <button type="button" class="range-btn" id="word-spacing-plus" aria-label="Augmenter l'espacement">+</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Ajustements visuels -->
+                <section class="accessibility-section">
+                    <h3><i data-lucide="eye"></i> Ajustements Visuels</h3>
+                    
+                    <div class="accessibility-group">
+                        <label for="brightness">Luminosité</label>
+                        <div class="range-input">
+                            <button type="button" class="range-btn" id="brightness-minus" aria-label="Réduire">−</button>
+                            <input type="range" id="brightness" name="brightness" min="-30" max="30" value="0" step="2" aria-label="Luminosité">
+                            <span id="brightness-value" class="range-value">0%</span>
+                            <button type="button" class="range-btn" id="brightness-plus" aria-label="Augmenter">+</button>
+                        </div>
+                    </div>
+
+                    <div class="accessibility-toggles">
+                        <label class="accessibility-toggle">
+                            <input type="checkbox" id="monochrome" name="monochrome" aria-label="Mode monochrome">
+                            <span>Mode monochrome</span>
+                        </label>
+                        <label class="accessibility-toggle">
+                            <input type="checkbox" id="reading-mask" name="reading-mask" aria-label="Masque de lecture">
+                            <span>Masque de lecture</span>
+                        </label>
+                        <label class="accessibility-toggle">
+                            <input type="checkbox" id="highlight-links" name="highlight-links" aria-label="Souligner les liens">
+                            <span>Souligner les liens</span>
+                        </label>
+                    </div>
+                </section>
+
+                <!-- Colorisation pour dyslexie -->
+                <section class="accessibility-section">
+                    <h3><i data-lucide="palette"></i> Colorisation (Dyslexie)</h3>
+                    
+                    <div class="accessibility-toggles">
+                        <label class="accessibility-toggle">
+                            <input type="checkbox" id="syllable-colors" name="syllable-colors" aria-label="Colorer les syllabes">
+                            <span>Alterner les couleurs par syllabe</span>
+                        </label>
+                        <label class="accessibility-toggle">
+                            <input type="checkbox" id="silent-letters" name="silent-letters" aria-label="Grisser les lettres muettes">
+                            <span>Grisser les lettres muettes</span>
+                        </label>
+                        <label class="accessibility-toggle">
+                            <input type="checkbox" id="alternate-words" name="alternate-words" aria-label="Alterner couleurs des mots">
+                            <span>Alterner les couleurs des mots</span>
+                        </label>
+                    </div>
+                </section>
+            </div>
+
+            <div class="accessibility-footer">
+                <button id="reset-accessibility" type="button" class="btn-secondary" aria-label="Réinitialiser tous les paramètres">
+                    <i data-lucide="rotate-ccw"></i>
+                    Réinitialiser
+                </button>
+            </div>
         </div>
     </aside>
 
