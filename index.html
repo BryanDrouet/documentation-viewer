@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="description" content="Lecteur documentaire moderne et responsive pour visualiser les notes et fichiers de cours avec thème clair/sombre.">
+    <meta name="keywords" content="documentation, notes, cours, stage, lecteur, BTS CIEL IR">
+    <meta name="author" content="Bryan">
+    <meta name="robots" content="index,follow">
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ecf2ff">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0b1324">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="fr_FR">
+    <meta property="og:title" content="Documentation Viewer - Stage et Cours">
+    <meta property="og:description" content="Visualisez les documents du projet dans une interface moderne et lisible.">
+    <meta property="og:site_name" content="Documentation Viewer">
+    <meta name="twitter:card" content="summary_large_image">
+    <base href="/">
+    <title>Documentation Viewer | Stage</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Literata:opsz,wght@7..72,450;7..72,600&display=swap" rel="stylesheet">
+    <link id="hljs-light-theme" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/styles/github.min.css">
+    <link id="hljs-dark-theme" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/styles/github-dark.min.css" disabled>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="page-bg" aria-hidden="true">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <div class="app-shell" id="app-shell">
+        <aside class="sidebar" id="sidebar" aria-label="Navigation des documents">
+            <div class="sidebar-top">
+                <div class="brand-wrap">
+                    <div class="brand-text">
+                        <h1>Documentation Viewer</h1>
+                        <p>Stage et cours</p>
+                    </div>
+                </div>
+
+                <div class="controls-block">
+                    <label class="label-inline" for="global-search">Rechercher dans la documentation</label>
+                    <div class="field-wrap">
+                        <i data-lucide="scan-search" aria-hidden="true"></i>
+                        <input id="global-search" name="global-search" type="search" autocomplete="off" placeholder="Ex: API, workflow, CSV..." aria-label="Rechercher dans les noms et contenus des documents">
+                    </div>
+                </div>
+            </div>
+
+            <nav class="docs-tree" id="docs-tree" aria-live="polite" aria-label="Liste des ressources"></nav>
+
+            <div class="sidebar-bottom">
+                <button id="reload-docs" name="reload-docs" type="button" class="btn-secondary" aria-label="Actualiser la liste des fichiers">
+                    <i data-lucide="refresh-cw" aria-hidden="true"></i>
+                    Actualiser
+                </button>
+                <div class="legal-actions" role="group" aria-label="Liens légaux et conformité">
+                    <button id="open-legal" name="open-legal" type="button" class="btn-secondary legal-btn" aria-label="Afficher les mentions légales">Mentions légales</button>
+                    <button id="open-privacy" name="open-privacy" type="button" class="btn-secondary legal-btn" aria-label="Afficher la politique de confidentialité">Confidentialité</button>
+                    <button id="open-accessibility" name="open-accessibility" type="button" class="btn-secondary legal-btn" aria-label="Afficher la déclaration d'accessibilité">Accessibilité</button>
+                    <button id="open-cookies" name="open-cookies" type="button" class="btn-secondary legal-btn" aria-label="Gérer le consentement cookies et stockage">Cookies</button>
+                </div>
+                <button id="open-legal-hub" name="open-legal-hub" type="button" class="btn-secondary legal-hub-btn" aria-label="Afficher les informations légales et conformité">Informations légales</button>
+                <p class="footnote" id="copyright"></p>
+            </div>
+        </aside>
+
+        <div id="sidebar-resizer" class="sidebar-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner le menu latéral"></div>
+
+        <main class="content" id="content" aria-label="Contenu du document">
+            <header class="content-head">
+                <button id="menu-toggle" name="menu-toggle" type="button" class="icon-btn mobile-only" aria-label="Afficher ou masquer la navigation">
+                    <i data-lucide="menu"></i>
+                </button>
+
+                <button id="sidebar-toggle" name="sidebar-toggle" type="button" class="icon-btn desktop-only" aria-label="Replier ou afficher le menu latéral" aria-pressed="false">
+                    <i data-lucide="panel-left-close"></i>
+                </button>
+
+                <div class="doc-meta">
+                    <p class="meta-label">Document actif</p>
+                    <h2 id="doc-title">Sélectionnez un document</h2>
+                </div>
+
+                <div class="head-actions">
+                    <button id="theme-cycle" name="theme-cycle" type="button" class="btn-primary" aria-label="Changer le mode d'affichage" aria-live="polite">
+                        <i data-lucide="sun-moon"></i>
+                        Thème: Système
+                    </button>
+                </div>
+            </header>
+
+            <section class="viewer-wrap">
+                <article id="markdown-render" class="markdown-render" aria-live="polite"></article>
+            </section>
+        </main>
+    </div>
+
+    <div id="mobile-dim" class="mobile-dim" aria-hidden="true"></div>
+
+    <aside id="legal-modal" class="legal-modal" role="dialog" aria-modal="true" aria-labelledby="legal-title" aria-describedby="legal-content" hidden>
+        <div class="legal-card">
+            <div class="legal-head">
+                <h2 id="legal-title">Informations légales</h2>
+                <button id="close-legal" name="close-legal" type="button" class="icon-btn" aria-label="Fermer la fenêtre légale">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div id="legal-content" class="legal-content"></div>
+            <div class="legal-foot">
+                <button id="erase-local-data" name="erase-local-data" type="button" class="btn-secondary" aria-label="Supprimer les préférences locales enregistrées">Supprimer mes données locales</button>
+            </div>
+        </div>
+    </aside>
+
+    <aside id="consent-banner" class="consent-banner" role="dialog" aria-modal="false" aria-labelledby="consent-title" aria-describedby="consent-text" hidden>
+        <h2 id="consent-title">Préférences RGPD</h2>
+        <p id="consent-text">Ce site peut enregistrer localement votre préférence de thème et le dernier document ouvert. Aucune donnée personnelle n'est transmise à un tiers.</p>
+        <div class="consent-actions">
+            <button id="consent-deny" name="consent-deny" type="button" class="btn-secondary" aria-label="Refuser l'enregistrement local">Refuser</button>
+            <button id="consent-allow" name="consent-allow" type="button" class="btn-primary" aria-label="Accepter l'enregistrement local">Accepter</button>
+        </div>
+    </aside>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/lib/highlight.min.js"></script>
+    <script defer src="script.js"></script>
+</body>
+</html>
