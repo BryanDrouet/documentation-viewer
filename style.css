@@ -25,6 +25,35 @@
     --resizer-width: 12px;
 }
 
+/* ====== OPEN DYSLEXIC - Polices locales ====== */
+@font-face {
+    font-family: 'Open Dyslexic';
+    src: url('fonts/OpenDyslexic-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Open Dyslexic';
+    src: url('fonts/OpenDyslexic-Bold.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Open Dyslexic';
+    src: url('fonts/OpenDyslexic-Italic.ttf') format('truetype');
+    font-weight: normal;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Open Dyslexic';
+    src: url('fonts/OpenDyslexic-BoldItalic.ttf') format('truetype');
+    font-weight: bold;
+    font-style: italic;
+}
+
 body[data-theme="dark"] {
     --bg-root: #0b1324;
     --bg-gradient: radial-gradient(circle at 10% 0%, #1e2d47 0%, #0b1324 45%), radial-gradient(circle at 90% 100%, #22315a 0%, #0b1324 40%);
