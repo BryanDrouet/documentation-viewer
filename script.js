@@ -443,6 +443,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const response = await fetch(dir, { cache: "no-store" });
             if (!response.ok) {
+                console.debug(`Directory listing for "${dir}" returned ${response.status} - falling back to probeDocumentFile`);
                 return { files: [], dirs: [] };
             }
             const html = await response.text();
@@ -543,11 +544,15 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if ((!directoryListingAvailable || !foundFiles.size) && FALLBACK_FILES.length) {
+            console.debug(`Directory listing not available or no files found. Probing ${FALLBACK_FILES.length} fallback files...`);
             await Promise.all(
                 FALLBACK_FILES.map(async (path) => {
                     const normalized = sanitizePath(path);
                     if (await probeDocumentFile(normalized)) {
+                        console.debug(`✓ Fallback file found: ${normalized}`);
                         foundFiles.add(normalized);
+                    } else {
+                        console.debug(`✗ Fallback file not found: ${normalized}`);
                     }
                 })
             );
