@@ -49,9 +49,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const THEME_MODES = ["system", "light", "dark"];
     const SIDEBAR_WIDTH_KEY = "md_reader_sidebar_width_v1";
     const SIDEBAR_COLLAPSED_KEY = "md_reader_sidebar_collapsed_v1";
+    const SCROLL_POSITION_KEY = "md_reader_scroll_position_v1";
+    const MENU_OPEN_KEY = "md_reader_menu_open_v1";
     let currentThemeMode = "system";
     let isDesktopSidebarCollapsed = false;
     let isResizingSidebar = false;
+    let scrollSaveTimeout;
 
     marked.setOptions({
         gfm: true,
@@ -317,6 +320,8 @@ document.addEventListener("DOMContentLoaded", () => {
         localStorage.removeItem(LAST_DOC_KEY);
         localStorage.removeItem(SIDEBAR_WIDTH_KEY);
         localStorage.removeItem(SIDEBAR_COLLAPSED_KEY);
+        localStorage.removeItem(SCROLL_POSITION_KEY);
+        localStorage.removeItem(MENU_OPEN_KEY);
     }
 
     function setSidebarToggleState() {
@@ -1068,6 +1073,23 @@ document.addEventListener("DOMContentLoaded", () => {
             if (currentQuery) {
                 highlightInViewer(currentQuery);
             }
+
+            // Restaurer la position du scroll pour ce document
+            if (hasConsent) {
+                setTimeout(() => {
+                    const scrollData = localStorage.getItem(SCROLL_POSITION_KEY);
+                    if (scrollData) {
+                        try {
+                            const { path, position } = JSON.parse(scrollData);
+                            if (path === safePath) {
+                                renderArea.parentElement.scrollTop = position;
+                            }
+                        } catch (e) {
+                            // Ignorer les données corrompues
+                        }
+                    }
+                }, 0);
+            }
         } catch {
             docTitle.textContent = "Document indisponible";
             createStatus("error-state", "404 - Fichier introuvable", `Le document ${safePath} n'a pas pu être chargé.`);
@@ -1184,18 +1206,27 @@ document.addEventListener("DOMContentLoaded", () => {
         menuToggle.addEventListener("click", () => {
             appShell.classList.add("sidebar-open");
             mobileDim.classList.add("visible");
+            if (hasConsent) {
+                localStorage.setItem(MENU_OPEN_KEY, "1");
+            }
         });
 
         if (closeMenuButton) {
             closeMenuButton.addEventListener("click", () => {
                 appShell.classList.remove("sidebar-open");
                 mobileDim.classList.remove("visible");
+                if (hasConsent) {
+                    localStorage.setItem(MENU_OPEN_KEY, "0");
+                }
             });
         }
 
         mobileDim.addEventListener("click", () => {
             appShell.classList.remove("sidebar-open");
             mobileDim.classList.remove("visible");
+            if (hasConsent) {
+                localStorage.setItem(MENU_OPEN_KEY, "0");
+            }
         });
 
         sidebarToggle.addEventListener("click", () => {
@@ -1301,6 +1332,23 @@ document.addEventListener("DOMContentLoaded", () => {
                 syncCodeTheme();
             }
         });
+
+        // Sauvegarder la position du scroll quand on scroll dans le contenu
+        const viewerWrap = document.querySelector(".viewer-wrap");
+        if (viewerWrap) {
+            viewerWrap.addEventListener("scroll", () => {
+                // Debounce pour ne pas sauvegarder à chaque événement de scroll
+                clearTimeout(scrollSaveTimeout);
+                scrollSaveTimeout = setTimeout(() => {
+                    if (hasConsent && activePath) {
+                        localStorage.setItem(SCROLL_POSITION_KEY, JSON.stringify({
+                            path: activePath,
+                            position: viewerWrap.scrollTop
+                        }));
+                    }
+                }, 500);
+            });
+        }
     }
 
     async function initializeApp() {
@@ -1313,6 +1361,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 setSidebarWidth(storedWidth);
             }
             isDesktopSidebarCollapsed = localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1";
+            
+            // Restaurer l'état du menu mobile
+            const isMenuOpen = localStorage.getItem(MENU_OPEN_KEY) === "1";
+            if (isMenuOpen) {
+                appShell.classList.add("sidebar-open");
+                mobileDim.classList.add("visible");
+            }
         }
         applyDesktopSidebarState();
         initializeEvents();
@@ -1333,6 +1388,321 @@ document.addEventListener("DOMContentLoaded", () => {
         const startDoc = storedLastDoc && allFiles.includes(storedLastDoc) ? storedLastDoc : allFiles[0];
         await loadDocument(startDoc);
     }
+
+    // ====== ACCESSIBILITY MENU ======
+    const ACCESSIBILITY_KEY = "md_reader_accessibility_v1";
+    const accessibilityBtn = document.getElementById("accessibility-btn");
+    const accessibilityModal = document.getElementById("accessibility-modal");
+    const closeAccessibilityBtn = document.getElementById("close-accessibility");
+    const resetAccessibilityBtn = document.getElementById("reset-accessibility");
+
+    // All accessibility controls
+    const accessibilityControls = {
+        fontFamily: document.getElementById("font-family"),
+        fontSize: document.getElementById("font-size"),
+        lineHeight: document.getElementById("line-height"),
+        letterSpacing: document.getElementById("letter-spacing"),
+        wordSpacing: document.getElementById("word-spacing"),
+        brightness: document.getElementById("brightness"),
+        monochrome: document.getElementById("monochrome"),
+        readingMask: document.getElementById("reading-mask"),
+        highlightLinks: document.getElementById("highlight-links"),
+        syllableColors: document.getElementById("syllable-colors"),
+        silentLetters: document.getElementById("silent-letters"),
+        alternateWords: document.getElementById("alternate-words")
+    };
+
+    // Range value displays
+    const rangeDisplays = {
+        fontSize: document.getElementById("font-size-value"),
+        lineHeight: document.getElementById("line-height-value"),
+        letterSpacing: document.getElementById("letter-spacing-value"),
+        wordSpacing: document.getElementById("word-spacing-value"),
+        brightness: document.getElementById("brightness-value")
+    };
+
+    // Range buttons
+    const rangeButtons = {
+        fontSizeMinus: document.getElementById("font-size-minus"),
+        fontSizePlus: document.getElementById("font-size-plus"),
+        lineHeightMinus: document.getElementById("line-height-minus"),
+        lineHeightPlus: document.getElementById("line-height-plus"),
+        letterSpacingMinus: document.getElementById("letter-spacing-minus"),
+        letterSpacingPlus: document.getElementById("letter-spacing-plus"),
+        wordSpacingMinus: document.getElementById("word-spacing-minus"),
+        wordSpacingPlus: document.getElementById("word-spacing-plus"),
+        brightnessMinus: document.getElementById("brightness-minus"),
+        brightnessPlus: document.getElementById("brightness-plus")
+    };
+
+    function updateRangeDisplay(control, display) {
+        const value = parseInt(control.value);
+        display.textContent = value + "%";
+    }
+
+    function applyAccessibilitySettings() {
+        const body = document.body;
+        const root = document.documentElement;
+        
+        // Font family - appliqué au body et tous les enfants avec !important
+        body.classList.remove("accessibility-font-opendyslexic", "accessibility-font-lexend", "accessibility-font-arial");
+        
+        if (accessibilityControls.fontFamily.value === "opendyslexic") {
+            body.classList.add("accessibility-font-opendyslexic");
+        } else if (accessibilityControls.fontFamily.value === "lexend") {
+            body.classList.add("accessibility-font-lexend");
+        } else if (accessibilityControls.fontFamily.value === "arial") {
+            body.classList.add("accessibility-font-arial");
+        }
+
+        // Font size - utilise variable CSS pour s'appliquer à TOUS les éléments
+        const fontSizeVal = parseInt(accessibilityControls.fontSize.value);
+        const fontSizeMultiplier = 1 + (fontSizeVal / 200);
+        root.style.setProperty('--accessibility-font-size', fontSizeMultiplier);
+
+        // Line height - utilise variable CSS
+        const lineHeightVal = parseInt(accessibilityControls.lineHeight.value);
+        const lineHeightMultiplier = 1 + (lineHeightVal / 150);
+        root.style.setProperty('--accessibility-line-height', lineHeightMultiplier);
+
+        // Letter spacing - utilise variable CSS
+        const letterSpacingVal = parseInt(accessibilityControls.letterSpacing.value);
+        root.style.setProperty('--accessibility-letter-spacing', (letterSpacingVal / 20) + "px");
+
+        // Word spacing - utilise variable CSS
+        const wordSpacingVal = parseInt(accessibilityControls.wordSpacing.value);
+        root.style.setProperty('--accessibility-word-spacing', (wordSpacingVal / 15) + "px");
+
+        // Brightness - appliqué au body
+        const brightnessVal = parseInt(accessibilityControls.brightness.value);
+        body.style.filter = `brightness(${100 + brightnessVal}%)`;
+
+        // Classes d'accessibilité appliquées au body pour affecter tout
+        // Monochrome
+        if (accessibilityControls.monochrome.checked) {
+            body.classList.add("accessibility-monochrome");
+        } else {
+            body.classList.remove("accessibility-monochrome");
+        }
+
+        // Reading mask
+        if (accessibilityControls.readingMask.checked) {
+            body.classList.add("accessibility-reading-mask");
+        } else {
+            body.classList.remove("accessibility-reading-mask");
+        }
+
+        // Highlight links
+        if (accessibilityControls.highlightLinks.checked) {
+            body.classList.add("accessibility-highlight-links");
+        } else {
+            body.classList.remove("accessibility-highlight-links");
+        }
+
+        // Syllable colors
+        if (accessibilityControls.syllableColors.checked) {
+            body.classList.add("accessibility-syllable-colors");
+        } else {
+            body.classList.remove("accessibility-syllable-colors");
+        }
+
+        // Silent letters
+        if (accessibilityControls.silentLetters.checked) {
+            body.classList.add("accessibility-silent-letters");
+        } else {
+            body.classList.remove("accessibility-silent-letters");
+        }
+
+        // Alternate words
+        if (accessibilityControls.alternateWords.checked) {
+            body.classList.add("accessibility-alternate-words");
+        } else {
+            body.classList.remove("accessibility-alternate-words");
+        }
+    }
+
+    function loadAccessibilitySettings() {
+        const root = document.documentElement;
+        
+        if (!hasConsent) return;
+        
+        const saved = localStorage.getItem(ACCESSIBILITY_KEY);
+        if (saved) {
+            const settings = JSON.parse(saved);
+            Object.assign(accessibilityControls, settings);
+            
+            // Update controls
+            for (const [key, control] of Object.entries(accessibilityControls)) {
+                if (control instanceof HTMLInputElement) {
+                    if (control.type === "checkbox") {
+                        control.checked = settings[key] || false;
+                    } else if (control.type === "range" || control.type === "text") {
+                        control.value = settings[key] || control.value;
+                    } else if (control.tagName === "SELECT") {
+                        control.value = settings[key] || "default";
+                    }
+                }
+            }
+
+            // Update displays
+            updateRangeDisplay(accessibilityControls.fontSize, rangeDisplays.fontSize);
+            updateRangeDisplay(accessibilityControls.lineHeight, rangeDisplays.lineHeight);
+            updateRangeDisplay(accessibilityControls.letterSpacing, rangeDisplays.letterSpacing);
+            updateRangeDisplay(accessibilityControls.wordSpacing, rangeDisplays.wordSpacing);
+            updateRangeDisplay(accessibilityControls.brightness, rangeDisplays.brightness);
+
+            // Appliquer et initialiser les variables CSS
+            applyAccessibilitySettings();
+        }
+    }
+
+    function saveAccessibilitySettings() {
+        if (!hasConsent) return;
+
+        const settings = {};
+        for (const [key, control] of Object.entries(accessibilityControls)) {
+            if (control instanceof HTMLInputElement) {
+                if (control.type === "checkbox") {
+                    settings[key] = control.checked;
+                } else {
+                    settings[key] = control.value;
+                }
+            }
+        }
+
+        localStorage.setItem(ACCESSIBILITY_KEY, JSON.stringify(settings));
+    }
+
+    function resetAccessibilitySettings() {
+        // Reset all controls to defaults
+        accessibilityControls.fontFamily.value = "default";
+        accessibilityControls.fontSize.value = 0;
+        accessibilityControls.lineHeight.value = 0;
+        accessibilityControls.letterSpacing.value = 0;
+        accessibilityControls.wordSpacing.value = 0;
+        accessibilityControls.brightness.value = 0;
+        
+        Object.values(accessibilityControls).forEach(control => {
+            if (control.type === "checkbox") {
+                control.checked = false;
+            }
+        });
+
+        // Update displays
+        updateRangeDisplay(accessibilityControls.fontSize, rangeDisplays.fontSize);
+        updateRangeDisplay(accessibilityControls.lineHeight, rangeDisplays.lineHeight);
+        updateRangeDisplay(accessibilityControls.letterSpacing, rangeDisplays.letterSpacing);
+        updateRangeDisplay(accessibilityControls.wordSpacing, rangeDisplays.wordSpacing);
+        updateRangeDisplay(accessibilityControls.brightness, rangeDisplays.brightness);
+
+        applyAccessibilitySettings();
+    }
+
+    // Event listeners
+    accessibilityBtn.addEventListener("click", () => {
+        accessibilityModal.hidden = false;
+        accessibilityModal.focus();
+    });
+
+    closeAccessibilityBtn.addEventListener("click", () => {
+        accessibilityModal.hidden = true;
+    });
+
+    resetAccessibilityBtn.addEventListener("click", () => {
+        const root = document.documentElement;
+        
+        // Reset all controls to defaults
+        accessibilityControls.fontFamily.value = "default";
+        accessibilityControls.fontSize.value = 0;
+        accessibilityControls.lineHeight.value = 0;
+        accessibilityControls.letterSpacing.value = 0;
+        accessibilityControls.wordSpacing.value = 0;
+        accessibilityControls.brightness.value = 0;
+        
+        Object.values(accessibilityControls).forEach(control => {
+            if (control.type === "checkbox") {
+                control.checked = false;
+            }
+        });
+
+        // Réinitialiser les variables CSS
+        root.style.setProperty('--accessibility-font-size', 1);
+        root.style.setProperty('--accessibility-line-height', 1);
+        root.style.setProperty('--accessibility-letter-spacing', '0px');
+        root.style.setProperty('--accessibility-word-spacing', '0px');
+
+        // Update displays
+        updateRangeDisplay(accessibilityControls.fontSize, rangeDisplays.fontSize);
+        updateRangeDisplay(accessibilityControls.lineHeight, rangeDisplays.lineHeight);
+        updateRangeDisplay(accessibilityControls.letterSpacing, rangeDisplays.letterSpacing);
+        updateRangeDisplay(accessibilityControls.wordSpacing, rangeDisplays.wordSpacing);
+        updateRangeDisplay(accessibilityControls.brightness, rangeDisplays.brightness);
+
+        // Apply and save
+        applyAccessibilitySettings();
+        saveAccessibilitySettings();
+    });
+
+    // Range value updates - applique IMMÉDIATEMENT et sauvegarde
+    ["fontSize", "lineHeight", "letterSpacing", "wordSpacing", "brightness"].forEach(key => {
+        accessibilityControls[key].addEventListener("input", (e) => {
+            updateRangeDisplay(e.target, rangeDisplays[key]);
+            applyAccessibilitySettings();
+            saveAccessibilitySettings();  // Sauvegarde automatique
+        });
+    });
+
+    // Range buttons
+    Object.entries(rangeButtons).forEach(([key, button]) => {
+        button.addEventListener("click", () => {
+            let control = null;
+            let increment = 1;
+
+            if (key.includes("fontSize")) {
+                control = accessibilityControls.fontSize;
+                increment = 1;
+            } else if (key.includes("lineHeight")) {
+                control = accessibilityControls.lineHeight;
+                increment = 1;
+            } else if (key.includes("letterSpacing")) {
+                control = accessibilityControls.letterSpacing;
+                increment = 1;
+            } else if (key.includes("wordSpacing")) {
+                control = accessibilityControls.wordSpacing;
+                increment = 1;
+            } else if (key.includes("brightness")) {
+                control = accessibilityControls.brightness;
+                increment = 1;
+            }
+
+            if (control) {
+                const currentValue = parseInt(control.value);
+                const isMinus = key.includes("Minus");
+                const newValue = isMinus ? currentValue - increment : currentValue + increment;
+                
+                control.value = Math.max(parseInt(control.min), Math.min(parseInt(control.max), newValue));
+                control.dispatchEvent(new Event("input"));  // Déclenche l'event input pour l'application/sauvegarde
+            }
+        });
+    });
+
+    // Other control changes - applique IMMÉDIATEMENT et sauvegarde
+    ["fontFamily", "monochrome", "readingMask", "highlightLinks", "syllableColors", "silentLetters", "alternateWords"].forEach(key => {
+        accessibilityControls[key].addEventListener("change", () => {
+            applyAccessibilitySettings();
+            saveAccessibilitySettings();  // Sauvegarde automatique
+        });
+    });
+
+    // Close modal on backdrop click
+    accessibilityModal.addEventListener("click", (e) => {
+        if (e.target === accessibilityModal) {
+            accessibilityModal.hidden = true;
+        }
+    });
+
+    // Load saved settings on startup
+    loadAccessibilitySettings();
 
     if (window.lucide) {
         lucide.createIcons();
