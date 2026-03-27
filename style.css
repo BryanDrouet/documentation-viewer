@@ -7,6 +7,8 @@
     --blur: 22px;
     --transition: 220ms ease;
     --shadow: 0 20px 60px rgba(14, 28, 55, 0.16);
+    --accessibility-font-size: 1;
+    --accessibility-line-height: 1;
 
     --bg-root: #d6dee9;
     --bg-gradient: linear-gradient(145deg, #d4dde9 0%, #e4eaf3 50%, #dbe3ef 100%);
@@ -630,9 +632,9 @@ body {
     display: table;
     overflow: visible;
     white-space: nowrap;
-    border-collapse: collapse;
-    border-radius: 0.55rem;
-    border: 1px solid var(--stroke);
+    border-collapse: separate;
+    border-spacing: 0;
+    border: none;
 }
 
 .table-scroll {
@@ -640,6 +642,7 @@ body {
     overflow-x: auto;
     overflow-y: hidden;
     border-radius: 0.55rem;
+    border: 1px solid var(--stroke);
 }
 
 .table-scroll + .table-scroll {
@@ -660,6 +663,25 @@ body {
 .markdown-render th {
     background: var(--accent-soft);
     font-family: var(--font-ui);
+}
+
+/* Coins arrondis pour les cellules du tableau (sauf le header) */
+.markdown-render tr:first-child th:first-child,
+.markdown-render tr:first-child td:first-child {
+    border-top-left-radius: 0.55rem;
+}
+
+.markdown-render tr:first-child th:last-child,
+.markdown-render tr:first-child td:last-child {
+    border-top-right-radius: 0.55rem;
+}
+
+.markdown-render tr:last-child td:first-child {
+    border-bottom-left-radius: 0.55rem;
+}
+
+.markdown-render tr:last-child td:last-child {
+    border-bottom-right-radius: 0.55rem;
 }
 
 .status,
@@ -1182,4 +1204,523 @@ body {
     .close-menu-btn {
         display: inline-flex;
     }
+}
+
+/* ====== ACCESSIBILITY BUTTON ====== */
+.btn-accessibility {
+    padding: 0.6rem 0.8rem;
+    border: 2px solid var(--stroke);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    color: var(--text-main);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all var(--transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+}
+
+.btn-accessibility:hover {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent);
+    transform: translateY(-1px);
+}
+
+.btn-accessibility:active {
+    transform: translateY(0);
+}
+
+.btn-accessibility svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* ====== ACCESSIBILITY MODAL ====== */
+.accessibility-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(9px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 1rem;
+    animation: fadeIn var(--transition) ease;
+}
+
+.accessibility-modal[hidden] {
+    display: none;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.accessibility-panel {
+    background: var(--surface);
+    border: 2px solid var(--stroke);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    max-width: 500px;
+    width: 100%;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    animation: slideUp var(--transition) ease;
+    overflow: hidden;
+}
+
+/* Protège le modal d'accessibilité de ses propres paramètres */
+#accessibility-modal, #accessibility-modal * {
+    font-size: 1rem !important;
+    line-height: 1.5 !important;
+    letter-spacing: 0 !important;
+    word-spacing: 0 !important;
+}
+
+.accessibility-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem;
+    border-bottom: 2px solid var(--stroke);
+}
+
+.accessibility-header h2 {
+    margin: 0;
+    font-size: 1.3rem;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.accessibility-header svg {
+    width: 24px;
+    height: 24px;
+    color: var(--accent);
+}
+
+.accessibility-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+/* Scrollbar styling */
+.accessibility-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.accessibility-content::-webkit-scrollbar-track {
+    background: var(--stroke);
+    border-radius: 4px;
+}
+
+.accessibility-content::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 4px;
+}
+
+.accessibility-content::-webkit-scrollbar-thumb:hover {
+    background: var(--focus);
+}
+
+.accessibility-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.accessibility-section h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    color: var(--text-main);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.8;
+}
+
+.accessibility-section h3 svg {
+    width: 18px;
+    height: 18px;
+    color: var(--accent);
+}
+
+.accessibility-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.accessibility-group label {
+    font-size: 0.9rem;
+    color: var(--text-soft);
+    font-weight: 500;
+}
+
+.accessibility-group select {
+    padding: 0.6rem;
+    border: 2px solid var(--stroke);
+    border-radius: var(--radius-md);
+    background: var(--surface-strong);
+    color: var(--text-main);
+    font-family: var(--font-ui);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: border-color var(--transition);
+}
+
+.accessibility-group select:hover {
+    border-color: var(--accent);
+}
+
+.accessibility-group select:focus {
+    outline: none;
+    border-color: var(--focus);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.range-input {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.range-btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 2px solid var(--stroke);
+    border-radius: var(--radius-md);
+    background: var(--surface-strong);
+    color: var(--text-main);
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition);
+    flex-shrink: 0;
+}
+
+.range-btn:hover {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.range-btn:active {
+    transform: scale(0.95);
+}
+
+input[type="range"] {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: linear-gradient(to right, var(--stroke), var(--accent));
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--surface);
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: all var(--transition);
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    width: 20px;
+    height: 20px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--surface);
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: all var(--transition);
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+    width: 20px;
+    height: 20px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+.range-value {
+    min-width: 45px;
+    text-align: right;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+}
+
+.accessibility-toggles {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.accessibility-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.8rem;
+    border: 2px solid var(--stroke);
+    border-radius: var(--radius-md);
+    background: var(--surface-strong);
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.accessibility-toggle:hover {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+}
+
+.accessibility-toggle input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--accent);
+    flex-shrink: 0;
+}
+
+.accessibility-toggle span {
+    color: var(--text-main);
+    font-size: 0.95rem;
+    font-weight: 500;
+    user-select: none;
+}
+
+.accessibility-footer {
+    display: flex;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-top: 2px solid var(--stroke);
+    background: var(--surface-strong);
+}
+
+.accessibility-footer button {
+    flex: 1;
+    padding: 0.8rem 1rem;
+    border: 2px solid var(--stroke);
+    border-radius: var(--radius-md);
+    font-family: var(--font-ui);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all var(--transition);
+}
+
+.accessibility-footer .btn-secondary {
+    background: var(--surface);
+    color: var(--text-main);
+}
+
+.accessibility-footer .btn-secondary:hover {
+    border-color: var(--text-soft);
+    background: var(--surface-strong);
+    color: var(--text-soft);
+}
+
+.accessibility-footer .btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+}
+
+.accessibility-footer .btn-primary:hover {
+    background: var(--focus);
+    border-color: var(--focus);
+    box-shadow: 0 4px 12px rgba(0, 88, 173, 0.3);
+}
+
+.accessibility-footer svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+    .accessibility-panel {
+        max-height: calc(100vh - 2rem);
+    }
+
+    .accessibility-header {
+        padding: 1rem;
+    }
+
+    .accessibility-header h2 {
+        font-size: 1.1rem;
+    }
+
+    .accessibility-content {
+        padding: 1rem;
+        gap: 1.5rem;
+    }
+
+    .accessibility-footer {
+        flex-direction: column;
+        padding: 1rem;
+    }
+
+    .accessibility-footer button {
+        width: 100%;
+    }
+}
+/* ====== ACCESSIBILITY EFFECTS - Appliqués au body entier ====== */
+/* Applique les styles d'accessibilité au contenu textuel, mais protège les éléments UI */
+:is(p, h1, h2, h3, h4, h5, h6, li, td, th, span, a, div, blockquote, pre, code, label, article, section):not(:is(button, input, select, svg, i, .icon-btn, .btn-primary, .btn-secondary, .range-btn, [data-lucide])) {
+    font-size: calc(1em * var(--accessibility-font-size)) !important;
+    line-height: calc(1.5 * var(--accessibility-line-height)) !important;
+    letter-spacing: var(--accessibility-letter-spacing, 0px) !important;
+    word-spacing: var(--accessibility-word-spacing, 0px) !important;
+}
+
+/* Applique aussi au markdown-render pour le contenu rendu */
+#markdown-render * {
+    font-size: calc(1em * var(--accessibility-font-size)) !important;
+    line-height: calc(1.5 * var(--accessibility-line-height)) !important;
+    letter-spacing: var(--accessibility-letter-spacing, 0px) !important;
+    word-spacing: var(--accessibility-word-spacing, 0px) !important;
+}
+
+/* Protège les éléments UI importants */
+button, input, select, textarea, svg, i, [data-lucide], .icon-btn, .btn-primary, .btn-secondary, .range-btn {
+    font-size: 1em !important;
+    line-height: 1 !important;
+    letter-spacing: 0 !important;
+    word-spacing: 0 !important;
+}
+
+/* Protège l'interface globale */
+.content-head, .sidebar, .docs-tree, .header, nav, .legal-modal, .consent-banner {
+    font-size: 1rem !important;
+}
+
+.content-head * , .sidebar *, .docs-tree *, nav *, .legal-modal *, .consent-banner * {
+    font-size: 1rem !important;
+}
+
+body.accessibility-font-opendyslexic,
+body.accessibility-font-opendyslexic * {
+    font-family: 'Open Dyslexic', 'Comic Sans MS', cursive, sans-serif !important;
+}
+
+body.accessibility-font-lexend,
+body.accessibility-font-lexend * {
+    font-family: 'Lexend', sans-serif !important;
+}
+
+body.accessibility-font-arial,
+body.accessibility-font-arial * {
+    font-family: 'Arial', sans-serif !important;
+}
+
+body.accessibility-monochrome {
+    filter: grayscale(100%);
+}
+
+/* Exclut les éléments critiques du filtre monochrome en leur appliquant l'inverse */
+#accessibility-modal, #accessibility-modal * {
+    filter: grayscale(0%) !important;
+}
+
+body.accessibility-reading-mask {
+    position: relative;
+}
+
+body.accessibility-reading-mask::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 40%;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.4), transparent);
+    pointer-events: none;
+    z-index: 999;
+    mix-blend-mode: multiply;
+}
+
+body.accessibility-reading-mask::after {
+    content: '';
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40%;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.4), transparent);
+    pointer-events: none;
+    z-index: 999;
+    mix-blend-mode: multiply;
+}
+
+body.accessibility-highlight-links a {
+    text-decoration: underline !important;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+}
+
+/* Syllable coloring - effet global */
+body.accessibility-syllable-colors {
+    background: linear-gradient(90deg, rgba(230, 120, 100, 0.08), rgba(120, 180, 230, 0.08)) fixed;
+}
+
+/* Silent letters effect */
+body.accessibility-silent-letters {
+    opacity: 0.95;
+}
+
+/* Alternate words effect */
+body.accessibility-alternate-words {
+    background: linear-gradient(90deg, rgba(200, 150, 255, 0.04), rgba(150, 200, 255, 0.04)) fixed;
 }
