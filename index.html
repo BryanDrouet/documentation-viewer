@@ -43,6 +43,10 @@
                     </div>
                 </div>
 
+                <button id="close-menu" name="close-menu" type="button" class="icon-btn close-menu-btn" aria-label="Fermer le menu">
+                    <i data-lucide="x"></i>
+                </button>
+
                 <div class="controls-block">
                     <label class="label-inline" for="global-search">Rechercher dans la documentation</label>
                     <div class="field-wrap">
@@ -55,10 +59,6 @@
             <nav class="docs-tree" id="docs-tree" aria-live="polite" aria-label="Liste des ressources"></nav>
 
             <div class="sidebar-bottom">
-                <button id="reload-docs" name="reload-docs" type="button" class="btn-secondary" aria-label="Actualiser la liste des fichiers">
-                    <i data-lucide="refresh-cw" aria-hidden="true"></i>
-                    Actualiser
-                </button>
                 <div class="legal-actions" role="group" aria-label="Liens légaux et conformité">
                     <button id="open-legal" name="open-legal" type="button" class="btn-secondary legal-btn" aria-label="Afficher les mentions légales">Mentions légales</button>
                     <button id="open-privacy" name="open-privacy" type="button" class="btn-secondary legal-btn" aria-label="Afficher la politique de confidentialité">Confidentialité</button>
@@ -130,7 +130,8 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.10.0/lib/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/languages/http.min.js"></script>
     <script defer src="script.js"></script>
 </body>
 </html>
