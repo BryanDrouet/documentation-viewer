@@ -564,6 +564,21 @@ body {
     padding: 0;
 }
 
+.markdown-render hr {
+    margin: 1.8rem 0;
+    border: none;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--stroke) 20%, var(--stroke) 80%, transparent);
+    border-radius: 1px;
+    opacity: 0.6;
+    transition: opacity var(--transition), background var(--transition);
+}
+
+.markdown-render hr:hover {
+    opacity: 1;
+    background: linear-gradient(90deg, transparent, var(--accent-soft) 20%, var(--accent-soft) 80%, transparent);
+}
+
 .code-block-wrap {
     margin: 0.9rem 0;
     border: 1px solid var(--stroke);
