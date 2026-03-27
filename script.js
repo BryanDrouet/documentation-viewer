@@ -2,7 +2,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const CONSENT_KEY = "md_reader_consent_v1";
     const THEME_KEY = "md_reader_theme_v1";
     const LAST_DOC_KEY = "md_reader_last_doc_v1";
-    const FALLBACK_FILES = ["Réunion_27-03-2026.md", "cours/APIs.md", "cours/Workflow.md"];
+    const FALLBACK_FILES = [
+        "cours/APIs.md",
+        "cours/Workflow.md",
+        "stage-Bryan/Réunion_27-03-2026.md"
+    ];
     const SUPPORTED_EXTENSIONS = new Set(["md", "txt", "csv"]);
     const CANDIDATE_DIRS = ["./", "cours/", "stage-Bryan/"];
 
@@ -14,7 +18,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const renderArea = document.getElementById("markdown-render");
     const docTitle = document.getElementById("doc-title");
     const globalSearchInput = document.getElementById("global-search");
-    const reloadButton = document.getElementById("reload-docs");
     const menuToggle = document.getElementById("menu-toggle");
     const sidebarToggle = document.getElementById("sidebar-toggle");
     const themeCycle = document.getElementById("theme-cycle");
@@ -34,6 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const closeLegal = document.getElementById("close-legal");
     const eraseLocalData = document.getElementById("erase-local-data");
     const copyright = document.getElementById("copyright");
+    const closeMenuButton = document.getElementById("close-menu");
 
     let allFiles = [];
     let activePath = "";
@@ -158,6 +162,74 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         return Array.from(linked);
+    }
+
+    function hasIgnoreMarkerAtTop(text) {
+        const normalized = (text || "").replace(/^\uFEFF/, "").trimStart();
+        const topChunk = normalized.slice(0, 700);
+        const firstLines = topChunk.split(/\r?\n/).slice(0, 8).join("\n").toLowerCase();
+        if (firstLines.includes("fichier à ignorer") || firstLines.includes("fichier a ignorer")) {
+            return true;
+        }
+
+        if (topChunk.startsWith("```")) {
+            const endFence = topChunk.indexOf("```", 3);
+            if (endFence > 3) {
+                const fencedContent = topChunk.slice(3, endFence).toLowerCase();
+                if (fencedContent.includes("fichier à ignorer") || fencedContent.includes("fichier a ignorer")) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    function normalizeIgnoreValue(value) {
+        return (value || "")
+            .replace(/^\uFEFF/, "")
+            .trim()
+            .toLowerCase()
+            .replace(/à/g, "a");
+    }
+
+    function shouldIgnoreDocumentContent(ext, text) {
+        const normalizedExt = (ext || "").toLowerCase();
+        const source = text || "";
+
+        if (normalizedExt === "md") {
+            return hasIgnoreMarkerAtTop(source);
+        }
+
+        if (normalizedExt === "txt") {
+            const firstMeaningfulLine = source
+                .replace(/^\uFEFF/, "")
+                .split(/\r?\n/)
+                .map((line) => line.trim())
+                .find((line) => line.length > 0) || "";
+            return normalizeIgnoreValue(firstMeaningfulLine) === "||fichier a ignorer||";
+        }
+
+        if (normalizedExt === "csv") {
+            const firstDataLine = source
+                .replace(/^\uFEFF/, "")
+                .split(/\r?\n/)
+                .map((line) => line.trim())
+                .find((line) => line.length > 0) || "";
+
+            if (!firstDataLine) {
+                return false;
+            }
+
+            const commaCount = (firstDataLine.match(/,/g) || []).length;
+            const semicolonCount = (firstDataLine.match(/;/g) || []).length;
+            const tabCount = (firstDataLine.match(/\t/g) || []).length;
+            const delimiter = semicolonCount > commaCount && semicolonCount >= tabCount ? ";" : tabCount > commaCount ? "\t" : ",";
+            const firstCell = (parseCsvLine(firstDataLine, delimiter)[0] || "").trim();
+            return normalizeIgnoreValue(firstCell) === "fichier a ignorer";
+        }
+
+        return false;
     }
 
     function createStatus(type, title, message) {
@@ -422,7 +494,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 return false;
             }
             const contentType = response.headers.get("content-type") || "";
-            return response.ok && (contentType.includes("text") || contentType.includes("markdown") || contentType.includes("octet-stream") || contentType === "");
+            if (!(contentType.includes("text") || contentType.includes("markdown") || contentType.includes("octet-stream") || contentType === "")) {
+                return false;
+            }
+
+            // Lire le contenu pour vérifier les marqueurs d'ignore selon le type de fichier.
+            const text = await response.text();
+            if (shouldIgnoreDocumentContent(getFileExtension(path), text)) {
+                return false;
+            }
+
+            return true;
         } catch {
             return false;
         }
@@ -446,8 +528,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const { files, dirs } = await tryParseDirectoryListing(dir || "./");
 
-                files.forEach((file) => {
-                    if (isSupportedFile(file)) {
+            files.forEach((file) => {
+                if (isSupportedFile(file)) {
                     foundFiles.add(sanitizePath(file));
                 }
             });
@@ -460,18 +542,27 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         }
 
-        await Promise.all(
-            FALLBACK_FILES.map(async (path) => {
-                const normalized = sanitizePath(path);
+        if ((!directoryListingAvailable || !foundFiles.size) && FALLBACK_FILES.length) {
+            await Promise.all(
+                FALLBACK_FILES.map(async (path) => {
+                    const normalized = sanitizePath(path);
                     if (await probeDocumentFile(normalized)) {
-                    foundFiles.add(normalized);
-                }
-            })
-        );
-
-        if (!foundFiles.size) {
-            FALLBACK_FILES.forEach((path) => foundFiles.add(sanitizePath(path)));
+                        foundFiles.add(normalized);
+                    }
+                })
+            );
         }
+
+        const existingFiles = Array.from(foundFiles);
+        const allowedFiles = await Promise.all(
+            existingFiles.map(async (path) => (await probeDocumentFile(path) ? path : null))
+        );
+        foundFiles.clear();
+        allowedFiles.forEach((path) => {
+            if (path) {
+                foundFiles.add(path);
+            }
+        });
 
         const crawlQueue = Array.from(foundFiles);
         const crawled = new Set();
@@ -499,11 +590,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 const markdownText = await response.text();
+                if (shouldIgnoreDocumentContent("md", markdownText)) {
+                    continue; // Ignorer ce fichier
+                }
+
                 const linkedFiles = extractLinkedDocuments(markdownText, currentFile);
 
                 for (const linked of linkedFiles) {
                     if (!foundFiles.has(linked)) {
-                        if (await probeDocumentFile(linked)) {
+                        if (!directoryListingAvailable && await probeDocumentFile(linked)) {
                             foundFiles.add(linked);
                             crawlQueue.push(linked);
                         }
@@ -515,7 +610,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         return Array.from(foundFiles)
             .map(sanitizePath)
-                .filter((p) => isSupportedFile(p))
+            .filter((p) => isSupportedFile(p))
             .sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
     }
 
@@ -907,6 +1002,19 @@ document.addEventListener("DOMContentLoaded", () => {
         return `<table>${headHtml}${bodyHtml}</table>`;
     }
 
+    function renderEmptyFileMessage(ext) {
+        if (ext === "csv") {
+            return "<p>Fichier CSV vide.</p>";
+        }
+        if (ext === "md") {
+            return "<p>Fichier Markdown vide.</p>";
+        }
+        if (ext === "txt") {
+            return "<p>Fichier texte vide.</p>";
+        }
+        return "<p>Fichier vide.</p>";
+    }
+
     async function loadDocument(path) {
         const safePath = sanitizePath(path);
         const ext = getFileExtension(safePath);
@@ -926,7 +1034,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const payload = await response.text();
             renderArea.className = `markdown-render format-${ext || "plain"}`;
 
-            if (ext === "md") {
+            if (!payload.trim()) {
+                renderArea.innerHTML = renderEmptyFileMessage(ext);
+            } else if (ext === "md") {
                 const rendered = marked.parse(payload);
                 const sanitized = DOMPurify.sanitize(rendered, {
                     USE_PROFILES: { html: true }
@@ -1067,22 +1177,21 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-        reloadButton.addEventListener("click", async () => {
-            renderLoading("Actualisation de la liste des documents...");
-            allFiles = await discoverMarkdownFiles();
-            await buildContentIndex(allFiles);
-            renderTree(allFiles);
-            if (allFiles.length) {
-                const preferred = allFiles.includes(activePath) ? activePath : allFiles[0];
-                loadDocument(preferred);
-            } else {
-                createStatus("empty-state", "Aucun document trouvé", "Vérifiez les dossiers du projet puis relancez l'actualisation.");
-            }
-        });
-
         menuToggle.addEventListener("click", () => {
             appShell.classList.add("sidebar-open");
             mobileDim.classList.add("visible");
+        });
+
+        if (closeMenuButton) {
+            closeMenuButton.addEventListener("click", () => {
+                appShell.classList.remove("sidebar-open");
+                mobileDim.classList.remove("visible");
+            });
+        }
+
+        mobileDim.addEventListener("click", () => {
+            appShell.classList.remove("sidebar-open");
+            mobileDim.classList.remove("visible");
         });
 
         sidebarToggle.addEventListener("click", () => {
@@ -1161,6 +1270,9 @@ document.addEventListener("DOMContentLoaded", () => {
             if (window.innerWidth > 980 || !appShell.classList.contains("sidebar-open")) {
                 return;
             }
+            if (!legalModal.hidden) {
+                return;
+            }
             const target = event.target;
             if (!(target instanceof Element)) {
                 return;
@@ -1209,7 +1321,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (!allFiles.length) {
             docTitle.textContent = "Aucun document";
-            createStatus("empty-state", "Aucun document trouvé", "Ajoutez des fichiers .md, .txt ou .csv puis cliquez sur Actualiser.");
+            createStatus("empty-state", "Aucun document trouvé", "Placez des fichiers .md, .txt ou .csv dans les dossiers scannés : racine (./), cours/ ou stage-Bryan/.");
             return;
         }
 
