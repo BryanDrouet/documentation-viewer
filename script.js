@@ -1407,9 +1407,8 @@ document.addEventListener("DOMContentLoaded", () => {
         monochrome: document.getElementById("monochrome"),
         readingMask: document.getElementById("reading-mask"),
         highlightLinks: document.getElementById("highlight-links"),
-        syllableColors: document.getElementById("syllable-colors"),
-        silentLetters: document.getElementById("silent-letters"),
-        alternateWords: document.getElementById("alternate-words")
+        coloringMode: document.querySelector('input[name="coloring-mode"]'),
+        silentLetters: document.getElementById("silent-letters")
     };
 
     // Range value displays
@@ -1438,6 +1437,113 @@ document.addEventListener("DOMContentLoaded", () => {
     function updateRangeDisplay(control, display) {
         const value = parseInt(control.value);
         display.textContent = value + "%";
+    }
+
+    // Sauvegarde du contenu original pour la colorisation
+    let originalMarkdownContent = null;
+
+    // Syllabation française correcte
+    function splitIntoSyllables(word) {
+        if (word.length <= 2) return [word];
+        
+        const vowels = 'aeiouyàâäãáàéèêëïîôöœùûüœæ';
+        const consonants = 'bcdfghjklmnpqrstvwxz';
+        const inseparablePairs = ['br', 'cr', 'dr', 'fr', 'gr', 'pr', 'tr', 'bl', 'cl', 'fl', 'gl', 'pl', 'vr', 'ch', 'gn'];
+        
+        const lower = word.toLowerCase();
+        const syllables = [];
+        let current = '';
+        let lastWasVowel = false;
+        
+        for (let i = 0; i < word.length; i++) {
+            const char = lower[i];
+            const isVowel = vowels.includes(char);
+            const nextChar = i + 1 < word.length ? lower[i + 1] : '';
+            const nextNextChar = i + 2 < word.length ? lower[i + 2] : '';
+            
+            current += word[i];
+            
+            // Coupure après une voyelle si:
+            if (isVowel && i < word.length - 1) {
+                const nextTwoChars = (char + nextChar + nextNextChar).toLowerCase();
+                
+                // Deux voyelles consécutives
+                if (vowels.includes(nextChar)) {
+                    syllables.push(current);
+                    current = '';
+                    lastWasVowel = true;
+                    continue;
+                }
+                
+                // Voyelle + consonne + voyelle
+                if (!vowels.includes(nextChar) && i + 2 < word.length && vowels.includes(nextNextChar)) {
+                    const twoConsonants = nextChar + nextNextChar;
+                    
+                    // Si groupe inséparable: pas de coupure
+                    if (inseparablePairs.includes(twoConsonants.toLowerCase())) {
+                        lastWasVowel = true;
+                        continue;
+                    }
+                    
+                    // Sinon: coupure avant la consonne
+                    syllables.push(current);
+                    current = '';
+                    lastWasVowel = false;
+                    continue;
+                }
+                
+                // Dernière syllabe
+                if (i === word.length - 2) {
+                    lastWasVowel = true;
+                    continue;
+                }
+            }
+            
+            lastWasVowel = isVowel;
+        }
+        
+        if (current) syllables.push(current);
+        return syllables.length > 0 ? syllables : [word];
+    }
+
+    function wrapWordsWithColors() {
+        const markdown = document.getElementById("markdown-render");
+        if (!markdown) return;
+
+        // Sauvegarde le contenu original si pas déjà fait
+        if (!originalMarkdownContent) {
+            originalMarkdownContent = markdown.innerHTML;
+        }
+
+        // Restaure le contenu original (sinon on wrap deux fois!)
+        markdown.innerHTML = originalMarkdownContent;
+
+        const coloringMode = document.querySelector('input[name="coloring-mode"]:checked')?.value || "none";
+
+        if (coloringMode !== "none") {
+            const paragraphs = markdown.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li');
+            
+            paragraphs.forEach(p => {
+                const text = p.textContent;
+                
+                if (coloringMode === "syllables") {
+                    // Découpe chaque mot en vraies syllabes françaises
+                    const words = text.match(/\S+/g) || [];
+                    p.innerHTML = words.map(word => {
+                        // Utilise la vraie syllabation
+                        const syllables = splitIntoSyllables(word);
+                        return syllables.map(syl => `<span class="syllable">${syl}</span>`).join('');
+                    }).join(' ');
+                } else if (coloringMode === "words") {
+                    // Wraps chaque mot dans un span avec classe "word"
+                    const words = text.split(/(\s+)/); // Garde les espaces
+                    p.innerHTML = words.map((word, idx) => {
+                        if (/\s/.test(word)) return word; // Retourne les espaces tel quel
+                        return `<span class="word">${word}</span>`;
+                    }).join('');
+                }
+            });
+        }
     }
 
     function applyAccessibilitySettings() {
@@ -1499,11 +1605,14 @@ document.addEventListener("DOMContentLoaded", () => {
             body.classList.remove("accessibility-highlight-links");
         }
 
-        // Syllable colors
-        if (accessibilityControls.syllableColors.checked) {
+        // Syllable/Word colors - radio group
+        const coloringMode = document.querySelector('input[name="coloring-mode"]:checked')?.value || "none";
+        body.classList.remove("accessibility-syllable-colors", "accessibility-alternate-words");
+        
+        if (coloringMode === "syllables") {
             body.classList.add("accessibility-syllable-colors");
-        } else {
-            body.classList.remove("accessibility-syllable-colors");
+        } else if (coloringMode === "words") {
+            body.classList.add("accessibility-alternate-words");
         }
 
         // Silent letters
@@ -1513,12 +1622,8 @@ document.addEventListener("DOMContentLoaded", () => {
             body.classList.remove("accessibility-silent-letters");
         }
 
-        // Alternate words
-        if (accessibilityControls.alternateWords.checked) {
-            body.classList.add("accessibility-alternate-words");
-        } else {
-            body.classList.remove("accessibility-alternate-words");
-        }
+        // Wraps les mots/syllabes après avoir appliqué les classes
+        wrapWordsWithColors();
     }
 
     function loadAccessibilitySettings() {
@@ -1551,6 +1656,12 @@ document.addEventListener("DOMContentLoaded", () => {
             updateRangeDisplay(accessibilityControls.wordSpacing, rangeDisplays.wordSpacing);
             updateRangeDisplay(accessibilityControls.brightness, rangeDisplays.brightness);
 
+            // Restore coloring mode (radio group)
+            if (settings.coloringMode) {
+                const radio = document.querySelector(`input[name="coloring-mode"][value="${settings.coloringMode}"]`);
+                if (radio) radio.checked = true;
+            }
+
             // Appliquer et initialiser les variables CSS
             applyAccessibilitySettings();
         }
@@ -1570,6 +1681,12 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
+        // Save coloring mode separately (radio group)
+        const coloringMode = document.querySelector('input[name="coloring-mode"]:checked');
+        if (coloringMode) {
+            settings.coloringMode = coloringMode.value;
+        }
+
         localStorage.setItem(ACCESSIBILITY_KEY, JSON.stringify(settings));
     }
 
@@ -1587,6 +1704,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 control.checked = false;
             }
         });
+
+        // Reset coloring mode to "none"
+        const noneRadio = document.querySelector('input[name="coloring-mode"][value="none"]');
+        if (noneRadio) noneRadio.checked = true;
 
         // Update displays
         updateRangeDisplay(accessibilityControls.fontSize, rangeDisplays.fontSize);
@@ -1687,10 +1808,18 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // Other control changes - applique IMMÉDIATEMENT et sauvegarde
-    ["fontFamily", "monochrome", "readingMask", "highlightLinks", "syllableColors", "silentLetters", "alternateWords"].forEach(key => {
+    ["fontFamily", "monochrome", "readingMask", "highlightLinks", "silentLetters"].forEach(key => {
         accessibilityControls[key].addEventListener("change", () => {
             applyAccessibilitySettings();
             saveAccessibilitySettings();  // Sauvegarde automatique
+        });
+    });
+
+    // Radio group for coloring mode
+    document.querySelectorAll('input[name="coloring-mode"]').forEach(radio => {
+        radio.addEventListener("change", () => {
+            applyAccessibilitySettings();
+            saveAccessibilitySettings();
         });
     });
 
