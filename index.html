@@ -230,17 +230,24 @@
                     <h3><i data-lucide="palette"></i> Colorisation (Dyslexie)</h3>
                     
                     <div class="accessibility-toggles">
-                        <label class="accessibility-toggle">
-                            <input type="checkbox" id="syllable-colors" name="syllable-colors" aria-label="Colorer les syllabes">
-                            <span>Alterner les couleurs par syllabe</span>
-                        </label>
+                        <fieldset class="radio-group" aria-label="Mode de colorisation">
+                            <legend>Colorisation du texte</legend>
+                            <label class="accessibility-radio">
+                                <input type="radio" name="coloring-mode" id="color-none" value="none" checked>
+                                <span>Aucune</span>
+                            </label>
+                            <label class="accessibility-radio">
+                                <input type="radio" name="coloring-mode" id="syllable-colors" value="syllables" aria-label="Colorer les syllabes">
+                                <span>Syllabes (arc-en-ciel)</span>
+                            </label>
+                            <label class="accessibility-radio">
+                                <input type="radio" name="coloring-mode" id="alternate-words" value="words" aria-label="Alterner couleurs des mots">
+                                <span>Alterner mots (bleu/rose)</span>
+                            </label>
+                        </fieldset>
                         <label class="accessibility-toggle">
                             <input type="checkbox" id="silent-letters" name="silent-letters" aria-label="Grisser les lettres muettes">
                             <span>Grisser les lettres muettes</span>
-                        </label>
-                        <label class="accessibility-toggle">
-                            <input type="checkbox" id="alternate-words" name="alternate-words" aria-label="Alterner couleurs des mots">
-                            <span>Alterner les couleurs des mots</span>
                         </label>
                     </div>
                 </section>
