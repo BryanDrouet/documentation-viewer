@@ -1,8 +1,6 @@
 # Les Workflows — Automatisation et orchestration des processus
 
-> **Cours de 1ère année — BTS CIEL-IR**  
-> Saint-Gabriel, Saint-Laurent-sur-Sèvre  
-> Référent pédagogique : Marc VOISIN  
+> **Cours supplémentaire de 1ère année — BTS CIEL-IR**
 > Mis à jour : mars 2026
 
 ---
@@ -661,4 +659,4 @@ Les workflows et les APIs forment un binôme indissociable du développement mod
 
 ---
 
-*Cours rédigé dans le cadre de la formation BTS CIEL-IR — Saint-Gabriel, Saint-Laurent-sur-Sèvre.*
+*Cours rédigé dans le cadre de la formation BTS CIEL-IR.*
