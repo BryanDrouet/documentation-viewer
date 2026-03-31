@@ -4,7 +4,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const LAST_DOC_KEY = "md_reader_last_doc_v1";
     const FALLBACK_FILES = [
         "cours/APIs.md",
-        "cours/Workflow.md"
+        "cours/Workflow.md",
+        "cours/PentestActiveDirectory.md"
     ];
     const SUPPORTED_EXTENSIONS = new Set(["md", "txt", "csv"]);
     const CANDIDATE_DIRS = ["./", "cours/"];
