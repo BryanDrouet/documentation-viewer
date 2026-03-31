@@ -1,8 +1,6 @@
 # Les APIs — Application Programming Interface
 
-> **Cours de 1ère année — BTS CIEL-IR**  
-> Saint-Gabriel, Saint-Laurent-sur-Sèvre  
-> Référent pédagogique : Marc VOISIN  
+> **Cours supplémentaire de 1ère année — BTS CIEL-IR**
 > Mis à jour : mars 2026
 
 ---
@@ -832,4 +830,4 @@ VS Code         → code.visualstudio.com
 
 ---
 
-*Cours rédigé dans le cadre de la formation BTS CIEL-IR — Saint-Gabriel, Saint-Laurent-sur-Sèvre.*
+*Cours rédigé dans le cadre de la formation BTS CIEL-IR.*
