@@ -1075,6 +1075,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 highlightInViewer(currentQuery);
             }
 
+            originalMarkdownContent = renderArea.innerHTML;
+            applyAccessibilitySettings();
+
             // Restaurer la position du scroll pour ce document
             if (hasConsent) {
                 setTimeout(() => {
@@ -1356,6 +1359,7 @@ document.addEventListener("DOMContentLoaded", () => {
         initializeConsent();
         initializeTheme();
         syncCodeTheme();
+        loadAccessibilitySettings();
         if (hasConsent) {
             const storedWidth = Number(localStorage.getItem(SIDEBAR_WIDTH_KEY));
             if (!Number.isNaN(storedWidth) && storedWidth > 0) {
@@ -1408,7 +1412,6 @@ document.addEventListener("DOMContentLoaded", () => {
         monochrome: document.getElementById("monochrome"),
         readingMask: document.getElementById("reading-mask"),
         highlightLinks: document.getElementById("highlight-links"),
-        coloringMode: document.querySelector('input[name="coloring-mode"]'),
         silentLetters: document.getElementById("silent-letters")
     };
 
@@ -1507,44 +1510,155 @@ document.addEventListener("DOMContentLoaded", () => {
         return syllables.length > 0 ? syllables : [word];
     }
 
-    function wrapWordsWithColors() {
-        const markdown = document.getElementById("markdown-render");
-        if (!markdown) return;
+    function restoreOriginalMarkdownContent() {
+        if (originalMarkdownContent !== null) {
+            renderArea.innerHTML = originalMarkdownContent;
+        }
+    }
 
-        // Sauvegarde le contenu original si pas déjà fait
-        if (!originalMarkdownContent) {
-            originalMarkdownContent = markdown.innerHTML;
+    function detectSilentSuffixStart(word) {
+        if (!word || word.length < 3 || /^[A-Z0-9]+$/.test(word)) {
+            return null;
         }
 
-        // Restaure le contenu original (sinon on wrap deux fois!)
-        markdown.innerHTML = originalMarkdownContent;
+        const lowered = word.toLowerCase();
+        if (lowered.endsWith("ent") && lowered.length >= 5) {
+            return word.length - 3;
+        }
+
+        const commonSilentEndings = ["e", "es", "s", "t", "d", "x", "p"];
+        for (const ending of commonSilentEndings) {
+            if (lowered.endsWith(ending) && lowered.length > ending.length + 1) {
+                return word.length - ending.length;
+            }
+        }
+
+        return null;
+    }
+
+    function createTextFragmentWithSilentSuffix(text, silentStart) {
+        const fragment = document.createDocumentFragment();
+        if (silentStart === null || silentStart < 0 || silentStart >= text.length) {
+            fragment.appendChild(document.createTextNode(text));
+            return fragment;
+        }
+
+        if (silentStart > 0) {
+            fragment.appendChild(document.createTextNode(text.slice(0, silentStart)));
+        }
+
+        const silent = document.createElement("span");
+        silent.className = "silent-letter";
+        silent.textContent = text.slice(silentStart);
+        fragment.appendChild(silent);
+        return fragment;
+    }
+
+    function splitTokenParts(token) {
+        const match = token.match(/^([^\p{L}\p{N}'’-]*)([\p{L}\p{N}][\p{L}\p{N}'’-]*)([^\p{L}\p{N}'’-]*)$/u);
+        if (!match) {
+            return null;
+        }
+
+        return {
+            prefix: match[1],
+            core: match[2],
+            suffix: match[3]
+        };
+    }
+
+    function shouldSkipTextNode(node) {
+        if (!node || !node.parentElement) {
+            return true;
+        }
+        const tag = node.parentElement.tagName;
+        return ["SCRIPT", "STYLE", "PRE", "CODE", "TEXTAREA"].includes(tag);
+    }
+
+    function applyLireCouleurColoring() {
+        if (originalMarkdownContent === null) {
+            return;
+        }
+
+        restoreOriginalMarkdownContent();
 
         const coloringMode = document.querySelector('input[name="coloring-mode"]:checked')?.value || "none";
+        const applySilentLetters = accessibilityControls.silentLetters.checked;
 
-        if (coloringMode !== "none") {
-            const paragraphs = markdown.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li');
-            
-            paragraphs.forEach(p => {
-                const text = p.textContent;
-                
-                if (coloringMode === "syllables") {
-                    // Découpe chaque mot en vraies syllabes françaises
-                    const words = text.match(/\S+/g) || [];
-                    p.innerHTML = words.map(word => {
-                        // Utilise la vraie syllabation
-                        const syllables = splitIntoSyllables(word);
-                        return syllables.map(syl => `<span class="syllable">${syl}</span>`).join('');
-                    }).join(' ');
-                } else if (coloringMode === "words") {
-                    // Wraps chaque mot dans un span avec classe "word"
-                    const words = text.split(/(\s+)/); // Garde les espaces
-                    p.innerHTML = words.map((word, idx) => {
-                        if (/\s/.test(word)) return word; // Retourne les espaces tel quel
-                        return `<span class="word">${word}</span>`;
-                    }).join('');
+        if (coloringMode === "none" && !applySilentLetters) {
+            return;
+        }
+
+        const walker = document.createTreeWalker(renderArea, NodeFilter.SHOW_TEXT);
+        const textNodes = [];
+        while (walker.nextNode()) {
+            const node = walker.currentNode;
+            if (!node.nodeValue || !node.nodeValue.trim() || shouldSkipTextNode(node)) {
+                continue;
+            }
+            textNodes.push(node);
+        }
+
+        let wordIndex = 0;
+
+        textNodes.forEach((node) => {
+            const value = node.nodeValue || "";
+            const tokens = value.split(/(\s+)/);
+            const fragment = document.createDocumentFragment();
+
+            tokens.forEach((token) => {
+                if (!token) {
+                    return;
+                }
+                if (/^\s+$/u.test(token)) {
+                    fragment.appendChild(document.createTextNode(token));
+                    return;
+                }
+
+                const parts = splitTokenParts(token);
+                if (!parts) {
+                    fragment.appendChild(document.createTextNode(token));
+                    return;
+                }
+
+                const { prefix, core, suffix } = parts;
+                const silentStart = applySilentLetters ? detectSilentSuffixStart(core) : null;
+
+                if (prefix) {
+                    fragment.appendChild(document.createTextNode(prefix));
+                }
+
+                if (coloringMode === "words") {
+                    const wordSpan = document.createElement("span");
+                    wordSpan.className = "word";
+                    wordSpan.dataset.wordIndex = String(wordIndex);
+                    wordSpan.appendChild(createTextFragmentWithSilentSuffix(core, silentStart));
+                    fragment.appendChild(wordSpan);
+                    wordIndex += 1;
+                } else if (coloringMode === "syllables") {
+                    const syllables = splitIntoSyllables(core);
+                    let offset = 0;
+                    syllables.forEach((syllable, index) => {
+                        const syllableSpan = document.createElement("span");
+                        syllableSpan.className = `syllable ${index % 2 === 0 ? "syllable-alt-a" : "syllable-alt-b"}`;
+                        const localSilentStart = silentStart === null ? null : silentStart - offset;
+                        syllableSpan.appendChild(createTextFragmentWithSilentSuffix(syllable, localSilentStart));
+                        fragment.appendChild(syllableSpan);
+                        offset += syllable.length;
+                    });
+                    wordIndex += 1;
+                } else {
+                    fragment.appendChild(createTextFragmentWithSilentSuffix(core, silentStart));
+                    wordIndex += 1;
+                }
+
+                if (suffix) {
+                    fragment.appendChild(document.createTextNode(suffix));
                 }
             });
-        }
+
+            node.replaceWith(fragment);
+        });
     }
 
     function applyAccessibilitySettings() {
@@ -1580,9 +1694,13 @@ document.addEventListener("DOMContentLoaded", () => {
         const wordSpacingVal = parseInt(accessibilityControls.wordSpacing.value);
         root.style.setProperty('--accessibility-word-spacing', (wordSpacingVal / 15) + "px");
 
-        // Brightness - appliqué au body
+        // Brightness/monochrome - appliqué au body
         const brightnessVal = parseInt(accessibilityControls.brightness.value);
-        body.style.filter = `brightness(${100 + brightnessVal}%)`;
+        const activeFilters = [`brightness(${100 + brightnessVal}%)`];
+        if (accessibilityControls.monochrome.checked) {
+            activeFilters.push("grayscale(100%)");
+        }
+        body.style.filter = activeFilters.join(" ");
 
         // Classes d'accessibilité appliquées au body pour affecter tout
         // Monochrome
@@ -1623,26 +1741,22 @@ document.addEventListener("DOMContentLoaded", () => {
             body.classList.remove("accessibility-silent-letters");
         }
 
-        // Wraps les mots/syllabes après avoir appliqué les classes
-        wrapWordsWithColors();
+        // Applique la colorisation/lettres muettes sans casser le HTML existant
+        applyLireCouleurColoring();
     }
 
     function loadAccessibilitySettings() {
-        const root = document.documentElement;
-        
-        if (!hasConsent) return;
-        
-        const saved = localStorage.getItem(ACCESSIBILITY_KEY);
+        const storage = hasConsent ? localStorage : sessionStorage;
+        const saved = storage.getItem(ACCESSIBILITY_KEY);
         if (saved) {
             const settings = JSON.parse(saved);
-            Object.assign(accessibilityControls, settings);
             
             // Update controls
             for (const [key, control] of Object.entries(accessibilityControls)) {
-                if (control instanceof HTMLInputElement) {
+                if (control instanceof HTMLElement) {
                     if (control.type === "checkbox") {
                         control.checked = settings[key] || false;
-                    } else if (control.type === "range" || control.type === "text") {
+                    } else if (control.type === "range") {
                         control.value = settings[key] || control.value;
                     } else if (control.tagName === "SELECT") {
                         control.value = settings[key] || "default";
@@ -1669,11 +1783,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function saveAccessibilitySettings() {
-        if (!hasConsent) return;
-
+        const storage = hasConsent ? localStorage : sessionStorage;
         const settings = {};
         for (const [key, control] of Object.entries(accessibilityControls)) {
-            if (control instanceof HTMLInputElement) {
+            if (control instanceof HTMLElement) {
                 if (control.type === "checkbox") {
                     settings[key] = control.checked;
                 } else {
@@ -1688,10 +1801,17 @@ document.addEventListener("DOMContentLoaded", () => {
             settings.coloringMode = coloringMode.value;
         }
 
-        localStorage.setItem(ACCESSIBILITY_KEY, JSON.stringify(settings));
+        storage.setItem(ACCESSIBILITY_KEY, JSON.stringify(settings));
+    }
+
+    function clearAccessibilitySettingsStorage() {
+        localStorage.removeItem(ACCESSIBILITY_KEY);
+        sessionStorage.removeItem(ACCESSIBILITY_KEY);
     }
 
     function resetAccessibilitySettings() {
+        const root = document.documentElement;
+
         // Reset all controls to defaults
         accessibilityControls.fontFamily.value = "default";
         accessibilityControls.fontSize.value = 0;
@@ -1710,6 +1830,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const noneRadio = document.querySelector('input[name="coloring-mode"][value="none"]');
         if (noneRadio) noneRadio.checked = true;
 
+        // Force reset des variables CSS personnalisées
+        root.style.setProperty('--accessibility-font-size', 1);
+        root.style.setProperty('--accessibility-line-height', 1);
+        root.style.setProperty('--accessibility-letter-spacing', '0px');
+        root.style.setProperty('--accessibility-word-spacing', '0px');
+
         // Update displays
         updateRangeDisplay(accessibilityControls.fontSize, rangeDisplays.fontSize);
         updateRangeDisplay(accessibilityControls.lineHeight, rangeDisplays.lineHeight);
@@ -1718,6 +1844,7 @@ document.addEventListener("DOMContentLoaded", () => {
         updateRangeDisplay(accessibilityControls.brightness, rangeDisplays.brightness);
 
         applyAccessibilitySettings();
+        clearAccessibilitySettingsStorage();
     }
 
     // Event listeners
@@ -1731,38 +1858,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     resetAccessibilityBtn.addEventListener("click", () => {
-        const root = document.documentElement;
-        
-        // Reset all controls to defaults
-        accessibilityControls.fontFamily.value = "default";
-        accessibilityControls.fontSize.value = 0;
-        accessibilityControls.lineHeight.value = 0;
-        accessibilityControls.letterSpacing.value = 0;
-        accessibilityControls.wordSpacing.value = 0;
-        accessibilityControls.brightness.value = 0;
-        
-        Object.values(accessibilityControls).forEach(control => {
-            if (control.type === "checkbox") {
-                control.checked = false;
-            }
-        });
-
-        // Réinitialiser les variables CSS
-        root.style.setProperty('--accessibility-font-size', 1);
-        root.style.setProperty('--accessibility-line-height', 1);
-        root.style.setProperty('--accessibility-letter-spacing', '0px');
-        root.style.setProperty('--accessibility-word-spacing', '0px');
-
-        // Update displays
-        updateRangeDisplay(accessibilityControls.fontSize, rangeDisplays.fontSize);
-        updateRangeDisplay(accessibilityControls.lineHeight, rangeDisplays.lineHeight);
-        updateRangeDisplay(accessibilityControls.letterSpacing, rangeDisplays.letterSpacing);
-        updateRangeDisplay(accessibilityControls.wordSpacing, rangeDisplays.wordSpacing);
-        updateRangeDisplay(accessibilityControls.brightness, rangeDisplays.brightness);
-
-        // Apply and save
-        applyAccessibilitySettings();
-        saveAccessibilitySettings();
+        resetAccessibilitySettings();
     });
 
     // Range value updates - applique IMMÉDIATEMENT et sauvegarde
@@ -1831,8 +1927,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Load saved settings on startup
-    loadAccessibilitySettings();
+    // Prépare un contenu de base avant le premier chargement de document
+    originalMarkdownContent = renderArea.innerHTML;
+    applyAccessibilitySettings();
 
     if (window.lucide) {
         lucide.createIcons();
