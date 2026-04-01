@@ -347,7 +347,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function setSidebarWidth(widthPx) {
-        const clamped = Math.max(240, Math.min(520, Math.round(widthPx)));
+        // Appliquer le ratio 70/30 : le sidebar doit être entre 30% et 70% de la largeur du container
+        const containerWidth = appShell.offsetWidth;
+        const minWidth = Math.round(containerWidth * 0.30); // 30% minimum
+        const maxWidth = Math.round(containerWidth * 0.70); // 70% maximum
+        const clamped = Math.max(minWidth, Math.min(maxWidth, Math.round(widthPx)));
         appShell.style.setProperty("--sidebar-width", `${clamped}px`);
         if (hasConsent) {
             localStorage.setItem(SIDEBAR_WIDTH_KEY, String(clamped));
@@ -1242,7 +1246,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         sidebarResizer.addEventListener("pointerdown", (event) => {
-            if (window.innerWidth <= 980 || isDesktopSidebarCollapsed) {
+            if (isDesktopSidebarCollapsed) {
                 return;
             }
             isResizingSidebar = true;
@@ -1329,6 +1333,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 mobileDim.classList.remove("visible");
             }
             applyDesktopSidebarState();
+            // Recalculer les limites du sidebar lors du redimensionnement de la fenêtre
+            const currentWidth = parseInt(appShell.style.getPropertyValue("--sidebar-width")) || 0;
+            if (currentWidth > 0) {
+                setSidebarWidth(currentWidth);
+            }
         });
 
         window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {

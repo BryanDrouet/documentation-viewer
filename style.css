@@ -171,7 +171,6 @@ body {
     display: grid;
     grid-template-rows: auto 1fr auto;
     background: var(--surface-strong);
-    border-right: 1px solid var(--stroke);
     min-width: 0;
     min-height: 0;
 }
@@ -1709,8 +1708,18 @@ input[type="range"]::-moz-range-thumb:hover {
     }
 }
 /* ====== ACCESSIBILITY EFFECTS - Appliqués au body entier ====== */
-/* Applique les styles d'accessibilité au contenu textuel, mais protège les éléments UI */
+/* Applique les styles d'accessibilité au contenu textuel et au sidebar, mais protège les éléments UI */
 :is(p, h1, h2, h3, h4, h5, h6, li, td, th, span, a, div, blockquote, pre, code, label, article, section):not(:is(button, input, select, svg, i, .icon-btn, .btn-primary, .btn-secondary, .range-btn, [data-lucide])) {
+    font-size: calc(1em * var(--accessibility-font-size)) !important;
+    line-height: calc(1.5 * var(--accessibility-line-height)) !important;
+    letter-spacing: var(--accessibility-letter-spacing, 0px) !important;
+    word-spacing: var(--accessibility-word-spacing, 0px) !important;
+}
+
+/* Applique aussi les styles au sidebar - éléments textuels */
+.sidebar p, .sidebar h1, .sidebar h2, .sidebar h3, .sidebar h4, .sidebar h5, .sidebar h6,
+.sidebar label, .sidebar span, .sidebar a, .sidebar div:not(.brand-wrap):not(.controls-block):not(.docs-tree):not(.sidebar-bottom),
+.docs-tree a, .docs-tree label, .docs-tree span, .docs-tree p {
     font-size: calc(1em * var(--accessibility-font-size)) !important;
     line-height: calc(1.5 * var(--accessibility-line-height)) !important;
     letter-spacing: var(--accessibility-letter-spacing, 0px) !important;
@@ -1733,26 +1742,59 @@ button, input, select, textarea, svg, i, [data-lucide], .icon-btn, .btn-primary,
     word-spacing: 0 !important;
 }
 
-/* Protège l'interface globale */
-.content-head, .sidebar, .docs-tree, .header, nav, .legal-modal, .consent-banner {
+/* Protège les modales légales et bandeaux (pas le sidebar - on veut que l'accessibilité s'y applique) */
+.legal-modal, .consent-banner {
     font-size: 1rem !important;
 }
 
-.content-head * , .sidebar *, .docs-tree *, nav *, .legal-modal *, .consent-banner * {
+.legal-modal *, .consent-banner * {
     font-size: 1rem !important;
 }
 
 body.accessibility-font-opendyslexic,
+body.accessibility-font-opendyslexic p,
+body.accessibility-font-opendyslexic h1,
+body.accessibility-font-opendyslexic h2,
+body.accessibility-font-opendyslexic h3,
+body.accessibility-font-opendyslexic h4,
+body.accessibility-font-opendyslexic h5,
+body.accessibility-font-opendyslexic h6,
+body.accessibility-font-opendyslexic label,
+body.accessibility-font-opendyslexic span,
+body.accessibility-font-opendyslexic a,
+body.accessibility-font-opendyslexic div,
 body.accessibility-font-opendyslexic * {
     font-family: 'Open Dyslexic', 'Comic Sans MS', cursive, sans-serif !important;
 }
 
 body.accessibility-font-lexend,
+body.accessibility-font-lexend p,
+body.accessibility-font-lexend h1,
+body.accessibility-font-lexend h2,
+body.accessibility-font-lexend h3,
+body.accessibility-font-lexend h4,
+body.accessibility-font-lexend h5,
+body.accessibility-font-lexend h6,
+body.accessibility-font-lexend label,
+body.accessibility-font-lexend span,
+body.accessibility-font-lexend a,
+body.accessibility-font-lexend div,
 body.accessibility-font-lexend * {
     font-family: 'Lexend', sans-serif !important;
 }
 
 body.accessibility-font-arial,
+body.accessibility-font-arial p,
+body.accessibility-font-arial h1,
+body.accessibility-font-arial h2,
+body.accessibility-font-arial h3,
+body.accessibility-font-arial h4,
+body.accessibility-font-arial h5,
+body.accessibility-font-arial h6,
+body.accessibility-font-arial label,
+body.accessibility-font-arial span,
+body.accessibility-font-arial a,
+body.accessibility-font-arial div,
 body.accessibility-font-arial * {
     font-family: 'Arial', sans-serif !important;
 }
