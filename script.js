@@ -15,11 +15,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const sidebarResizer = document.getElementById("sidebar-resizer");
     const mobileDim = document.getElementById("mobile-dim");
     const docsTree = document.getElementById("docs-tree");
+    const sidebarTabButtons = document.querySelectorAll(".sidebar-tab");
+    const sidebarPanels = document.querySelectorAll(".sidebar-panel");
     const renderArea = document.getElementById("markdown-render");
     const docTitle = document.getElementById("doc-title");
     const globalSearchInput = document.getElementById("global-search");
     const menuToggle = document.getElementById("menu-toggle");
     const sidebarToggle = document.getElementById("sidebar-toggle");
+    const closeDocumentButton = document.getElementById("close-document");
     const themeCycle = document.getElementById("theme-cycle");
     const consentBanner = document.getElementById("consent-banner");
     const consentAllow = document.getElementById("consent-allow");
@@ -52,6 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const SIDEBAR_COLLAPSED_KEY = "md_reader_sidebar_collapsed_v1";
     const SCROLL_POSITION_KEY = "md_reader_scroll_position_v1";
     const MENU_OPEN_KEY = "md_reader_menu_open_v1";
+    const CLOSED_DOC_SENTINEL = "__closed__";
     let currentThemeMode = "system";
     let isDesktopSidebarCollapsed = false;
     let isResizingSidebar = false;
@@ -316,9 +320,55 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    function getStateStorage() {
+        return hasConsent ? localStorage : sessionStorage;
+    }
+
+    function persistLastDoc(value) {
+        getStateStorage().setItem(LAST_DOC_KEY, value);
+    }
+
+    function readStoredLastDoc() {
+        return getStateStorage().getItem(LAST_DOC_KEY);
+    }
+
+    function removeStoredLastDoc() {
+        localStorage.removeItem(LAST_DOC_KEY);
+        sessionStorage.removeItem(LAST_DOC_KEY);
+    }
+
+    function stripExtension(path) {
+        return sanitizePath(path).replace(/\.[a-z0-9]+$/i, "");
+    }
+
+    function toSharePath(path) {
+        const stem = stripExtension(path);
+        return stem ? `/${stem}` : "/";
+    }
+
+    function resolveDocumentFromLocation(files) {
+        const fromPathname = sanitizePath(decodeURIComponent(window.location.pathname || "/"));
+        if (!fromPathname) {
+            return null;
+        }
+
+        const exact = files.find((file) => sanitizePath(file).toLowerCase() === fromPathname.toLowerCase());
+        if (exact) {
+            return exact;
+        }
+
+        const withoutExtPath = fromPathname.replace(/\.[a-z0-9]+$/i, "");
+        return files.find((file) => stripExtension(file).toLowerCase() === withoutExtPath.toLowerCase()) || null;
+    }
+
+    function getDefaultDocument(files) {
+        const readme = files.find((file) => sanitizePath(file).toLowerCase() === "readme.md");
+        return readme || files[0] || "";
+    }
+
     function removePersistedData() {
         localStorage.removeItem(THEME_KEY);
-        localStorage.removeItem(LAST_DOC_KEY);
+        removeStoredLastDoc();
         localStorage.removeItem(SIDEBAR_WIDTH_KEY);
         localStorage.removeItem(SIDEBAR_COLLAPSED_KEY);
         localStorage.removeItem(SCROLL_POSITION_KEY);
@@ -344,6 +394,22 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         appShell.classList.toggle("sidebar-collapsed", isDesktopSidebarCollapsed);
         setSidebarToggleState();
+    }
+
+    function setSidebarTab(tabName) {
+        sidebar.classList.toggle("sidebar-accessibility-active", tabName === "accessibility");
+
+        sidebarTabButtons.forEach((button) => {
+            const isActive = button.dataset.sidebarTab === tabName;
+            button.classList.toggle("is-active", isActive);
+            button.setAttribute("aria-selected", isActive ? "true" : "false");
+        });
+
+        sidebarPanels.forEach((panel) => {
+            const isActive = panel.dataset.sidebarPanel === tabName;
+            panel.classList.toggle("is-active", isActive);
+            panel.hidden = !isActive;
+        });
     }
 
     function setSidebarWidth(widthPx) {
@@ -1029,13 +1095,36 @@ document.addEventListener("DOMContentLoaded", () => {
         return "<p>Fichier vide.</p>";
     }
 
-    async function loadDocument(path) {
+    function closeActiveDocument(options = {}) {
+        const { persistClosed = true, updateHistory = true, historyMode = "push" } = options;
+        activePath = "";
+        renderTree(allFiles);
+        docTitle.textContent = "Aucun document";
+        createStatus("empty-state", "Document ferme", "Selectionnez un document dans l'onglet Documents.");
+        originalMarkdownContent = renderArea.innerHTML;
+
+        if (persistClosed) {
+            persistLastDoc(CLOSED_DOC_SENTINEL);
+        }
+
+        if (updateHistory) {
+            const method = historyMode === "replace" ? "replaceState" : "pushState";
+            history[method](null, "", "/");
+        }
+    }
+
+    async function loadDocument(path, options = {}) {
+        const { updateHistory = true, historyMode = "push" } = options;
         const safePath = sanitizePath(path);
         const ext = getFileExtension(safePath);
         activePath = safePath;
-        if (location.hash) {
-            history.replaceState(null, "", `${location.pathname}${location.search}`);
+
+        if (updateHistory) {
+            const targetUrl = toSharePath(safePath);
+            const method = historyMode === "replace" ? "replaceState" : "pushState";
+            history[method](null, "", targetUrl);
         }
+
         renderTree(allFiles);
         renderLoading("Chargement du document...");
 
@@ -1069,7 +1158,7 @@ document.addEventListener("DOMContentLoaded", () => {
             enhanceCodeBlocks(safePath);
 
             docTitle.textContent = formatDocLabel(safePath);
-            persist(LAST_DOC_KEY, safePath);
+            persistLastDoc(safePath);
 
             if (window.lucide) {
                 lucide.createIcons();
@@ -1309,6 +1398,12 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
+        if (closeDocumentButton) {
+            closeDocumentButton.addEventListener("click", () => {
+                closeActiveDocument();
+            });
+        }
+
         document.addEventListener("click", (event) => {
             if (window.innerWidth > 980 || !appShell.classList.contains("sidebar-open")) {
                 return;
@@ -1344,6 +1439,15 @@ document.addEventListener("DOMContentLoaded", () => {
             if (currentThemeMode === "system") {
                 syncCodeTheme();
             }
+        });
+
+        window.addEventListener("popstate", async () => {
+            const fromUrl = resolveDocumentFromLocation(allFiles);
+            if (fromUrl) {
+                await loadDocument(fromUrl, { updateHistory: false });
+                return;
+            }
+            closeActiveDocument({ persistClosed: false, updateHistory: false });
         });
 
         // Sauvegarder la position du scroll quand on scroll dans le contenu
@@ -1398,16 +1502,30 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        const storedLastDoc = hasConsent ? localStorage.getItem(LAST_DOC_KEY) : null;
-        const startDoc = storedLastDoc && allFiles.includes(storedLastDoc) ? storedLastDoc : allFiles[0];
-        await loadDocument(startDoc);
+        const fromUrl = resolveDocumentFromLocation(allFiles);
+        const storedLastDoc = readStoredLastDoc();
+        const defaultDoc = getDefaultDocument(allFiles);
+
+        if (fromUrl) {
+            await loadDocument(fromUrl, { updateHistory: false, historyMode: "replace" });
+            return;
+        }
+
+        if (storedLastDoc && storedLastDoc !== CLOSED_DOC_SENTINEL && allFiles.includes(storedLastDoc)) {
+            await loadDocument(storedLastDoc, { historyMode: "replace" });
+            return;
+        }
+
+        if (defaultDoc) {
+            await loadDocument(defaultDoc, { historyMode: "replace" });
+            return;
+        }
+
+        closeActiveDocument({ persistClosed: false, updateHistory: false });
     }
 
     // ====== ACCESSIBILITY MENU ======
     const ACCESSIBILITY_KEY = "md_reader_accessibility_v1";
-    const accessibilityBtn = document.getElementById("accessibility-btn");
-    const accessibilityModal = document.getElementById("accessibility-modal");
-    const closeAccessibilityBtn = document.getElementById("close-accessibility");
     const resetAccessibilityBtn = document.getElementById("reset-accessibility");
 
     // All accessibility controls
@@ -1420,7 +1538,8 @@ document.addEventListener("DOMContentLoaded", () => {
         brightness: document.getElementById("brightness"),
         monochrome: document.getElementById("monochrome"),
         readingMask: document.getElementById("reading-mask"),
-        highlightLinks: document.getElementById("highlight-links"),
+        maskOpacity: document.getElementById("mask-opacity"),
+        maskHeight: document.getElementById("mask-height"),
         silentLetters: document.getElementById("silent-letters")
     };
 
@@ -1430,7 +1549,9 @@ document.addEventListener("DOMContentLoaded", () => {
         lineHeight: document.getElementById("line-height-value"),
         letterSpacing: document.getElementById("letter-spacing-value"),
         wordSpacing: document.getElementById("word-spacing-value"),
-        brightness: document.getElementById("brightness-value")
+        brightness: document.getElementById("brightness-value"),
+        maskOpacity: document.getElementById("mask-opacity-value"),
+        maskHeight: document.getElementById("mask-height-value")
     };
 
     // Range buttons
@@ -1444,7 +1565,11 @@ document.addEventListener("DOMContentLoaded", () => {
         wordSpacingMinus: document.getElementById("word-spacing-minus"),
         wordSpacingPlus: document.getElementById("word-spacing-plus"),
         brightnessMinus: document.getElementById("brightness-minus"),
-        brightnessPlus: document.getElementById("brightness-plus")
+        brightnessPlus: document.getElementById("brightness-plus"),
+        maskOpacityMinus: document.getElementById("mask-opacity-minus"),
+        maskOpacityPlus: document.getElementById("mask-opacity-plus"),
+        maskHeightMinus: document.getElementById("mask-height-minus"),
+        maskHeightPlus: document.getElementById("mask-height-plus")
     };
 
     function updateRangeDisplay(control, display) {
@@ -1703,6 +1828,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const wordSpacingVal = parseInt(accessibilityControls.wordSpacing.value);
         root.style.setProperty('--accessibility-word-spacing', (wordSpacingVal / 15) + "px");
 
+        // Reading mask customization
+        const maskOpacityVal = parseInt(accessibilityControls.maskOpacity.value);
+        const maskHeightVal = parseInt(accessibilityControls.maskHeight.value);
+        root.style.setProperty('--reading-mask-opacity', `${maskOpacityVal / 100}`);
+        root.style.setProperty('--reading-mask-height', `${maskHeightVal}%`);
+
         // Brightness/monochrome - appliqué au body
         const brightnessVal = parseInt(accessibilityControls.brightness.value);
         const activeFilters = [`brightness(${100 + brightnessVal}%)`];
@@ -1724,13 +1855,6 @@ document.addEventListener("DOMContentLoaded", () => {
             body.classList.add("accessibility-reading-mask");
         } else {
             body.classList.remove("accessibility-reading-mask");
-        }
-
-        // Highlight links
-        if (accessibilityControls.highlightLinks.checked) {
-            body.classList.add("accessibility-highlight-links");
-        } else {
-            body.classList.remove("accessibility-highlight-links");
         }
 
         // Syllable/Word colors - radio group
@@ -1779,6 +1903,8 @@ document.addEventListener("DOMContentLoaded", () => {
             updateRangeDisplay(accessibilityControls.letterSpacing, rangeDisplays.letterSpacing);
             updateRangeDisplay(accessibilityControls.wordSpacing, rangeDisplays.wordSpacing);
             updateRangeDisplay(accessibilityControls.brightness, rangeDisplays.brightness);
+            updateRangeDisplay(accessibilityControls.maskOpacity, rangeDisplays.maskOpacity);
+            updateRangeDisplay(accessibilityControls.maskHeight, rangeDisplays.maskHeight);
 
             // Restore coloring mode (radio group)
             if (settings.coloringMode) {
@@ -1828,6 +1954,8 @@ document.addEventListener("DOMContentLoaded", () => {
         accessibilityControls.letterSpacing.value = 0;
         accessibilityControls.wordSpacing.value = 0;
         accessibilityControls.brightness.value = 0;
+        accessibilityControls.maskOpacity.value = 40;
+        accessibilityControls.maskHeight.value = 40;
         
         Object.values(accessibilityControls).forEach(control => {
             if (control.type === "checkbox") {
@@ -1844,6 +1972,8 @@ document.addEventListener("DOMContentLoaded", () => {
         root.style.setProperty('--accessibility-line-height', 1);
         root.style.setProperty('--accessibility-letter-spacing', '0px');
         root.style.setProperty('--accessibility-word-spacing', '0px');
+        root.style.setProperty('--reading-mask-opacity', '0.4');
+        root.style.setProperty('--reading-mask-height', '40%');
 
         // Update displays
         updateRangeDisplay(accessibilityControls.fontSize, rangeDisplays.fontSize);
@@ -1851,19 +1981,18 @@ document.addEventListener("DOMContentLoaded", () => {
         updateRangeDisplay(accessibilityControls.letterSpacing, rangeDisplays.letterSpacing);
         updateRangeDisplay(accessibilityControls.wordSpacing, rangeDisplays.wordSpacing);
         updateRangeDisplay(accessibilityControls.brightness, rangeDisplays.brightness);
+        updateRangeDisplay(accessibilityControls.maskOpacity, rangeDisplays.maskOpacity);
+        updateRangeDisplay(accessibilityControls.maskHeight, rangeDisplays.maskHeight);
 
         applyAccessibilitySettings();
         clearAccessibilitySettingsStorage();
     }
 
     // Event listeners
-    accessibilityBtn.addEventListener("click", () => {
-        accessibilityModal.hidden = false;
-        accessibilityModal.focus();
-    });
-
-    closeAccessibilityBtn.addEventListener("click", () => {
-        accessibilityModal.hidden = true;
+    sidebarTabButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            setSidebarTab(button.dataset.sidebarTab || "docs");
+        });
     });
 
     resetAccessibilityBtn.addEventListener("click", () => {
@@ -1871,7 +2000,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // Range value updates - applique IMMÉDIATEMENT et sauvegarde
-    ["fontSize", "lineHeight", "letterSpacing", "wordSpacing", "brightness"].forEach(key => {
+    ["fontSize", "lineHeight", "letterSpacing", "wordSpacing", "brightness", "maskOpacity", "maskHeight"].forEach(key => {
         accessibilityControls[key].addEventListener("input", (e) => {
             updateRangeDisplay(e.target, rangeDisplays[key]);
             applyAccessibilitySettings();
@@ -1900,6 +2029,12 @@ document.addEventListener("DOMContentLoaded", () => {
             } else if (key.includes("brightness")) {
                 control = accessibilityControls.brightness;
                 increment = 1;
+            } else if (key.includes("maskOpacity")) {
+                control = accessibilityControls.maskOpacity;
+                increment = 5;
+            } else if (key.includes("maskHeight")) {
+                control = accessibilityControls.maskHeight;
+                increment = 2;
             }
 
             if (control) {
@@ -1914,7 +2049,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // Other control changes - applique IMMÉDIATEMENT et sauvegarde
-    ["fontFamily", "monochrome", "readingMask", "highlightLinks", "silentLetters"].forEach(key => {
+    ["fontFamily", "monochrome", "readingMask", "silentLetters"].forEach(key => {
         accessibilityControls[key].addEventListener("change", () => {
             applyAccessibilitySettings();
             saveAccessibilitySettings();  // Sauvegarde automatique
@@ -1929,16 +2064,10 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // Close modal on backdrop click
-    accessibilityModal.addEventListener("click", (e) => {
-        if (e.target === accessibilityModal) {
-            accessibilityModal.hidden = true;
-        }
-    });
-
     // Prépare un contenu de base avant le premier chargement de document
     originalMarkdownContent = renderArea.innerHTML;
     applyAccessibilitySettings();
+    setSidebarTab("docs");
 
     if (window.lucide) {
         lucide.createIcons();

@@ -1,0 +1,185 @@
+les deux menus doivent avoir le même style
+
+<nav class="docs-tree sidebar-panel is-active" id="docs-tree" data-sidebar-panel="docs" aria-live="polite" aria-label="Liste des ressources">
+                    <section class="tree-group " data-group="cours" aria-label="cours">
+                        <button type="button" class="group-title" data-group-toggle="cours" aria-label="Afficher ou masquer cours">
+                            <span class="group-meta">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="chevron-down" aria-hidden="true" class="lucide lucide-chevron-down"><path d="m6 9 6 6 6-6"></path></svg>
+                                <span>cours</span>
+                            </span>
+                            <span class="group-count">3</span>
+                        </button>
+                        
+                            <button type="button" class="doc-item  " data-path="cours/APIs.md" style="animation-delay:0ms" aria-label="Ouvrir APIs">
+                                <span class="left">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="file-text" aria-hidden="true" class="lucide lucide-file-text"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"></path><path d="M14 2v5a1 1 0 0 0 1 1h5"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg>
+                                    <span class="title">APIs</span>
+                                </span>
+                                <span class="path">cours/APIs.md</span>
+                            </button>
+                        
+                            <button type="button" class="doc-item  " data-path="cours/PentestActiveDirectory.md" style="animation-delay:22ms" aria-label="Ouvrir PentestActiveDirectory">
+                                <span class="left">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="file-text" aria-hidden="true" class="lucide lucide-file-text"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"></path><path d="M14 2v5a1 1 0 0 0 1 1h5"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg>
+                                    <span class="title">PentestActiveDirectory</span>
+                                </span>
+                                <span class="path">cours/PentestActiveDirectory.md</span>
+                            </button>
+                        
+                            <button type="button" class="doc-item  " data-path="cours/Workflow.md" style="animation-delay:44ms" aria-label="Ouvrir Workflow">
+                                <span class="left">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="file-text" aria-hidden="true" class="lucide lucide-file-text"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"></path><path d="M14 2v5a1 1 0 0 0 1 1h5"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg>
+                                    <span class="title">Workflow</span>
+                                </span>
+                                <span class="path">cours/Workflow.md</span>
+                            </button>
+                        
+                    </section>
+                </nav>
+
+                <section id="sidebar-accessibility" class="sidebar-panel sidebar-accessibility-panel is-active" data-sidebar-panel="accessibility" aria-label="Reglages d'accessibilite">
+                    <div class="accessibility-panel accessibility-panel-inline">
+                        <div class="accessibility-header">
+                            <h2 id="accessibility-title"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="accessibility" aria-hidden="true" class="lucide lucide-accessibility"><circle cx="16" cy="4" r="1"></circle><path d="m18 19 1-7-6 1"></path><path d="m5 8 3-3 5.5 3-2.36 3.5"></path><path d="M4.24 14.5a5 5 0 0 0 6.88 6"></path><path d="M13.76 17.5a5 5 0 0 0-6.88-6"></path></svg>Accessibilite - Dyslexie</h2>
+                        </div>
+
+                        <div class="accessibility-content">
+                            <!-- Ajustements textuels -->
+                            <section class="accessibility-section">
+                                <h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="type" aria-hidden="true" class="lucide lucide-type"><path d="M12 4v16"></path><path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2"></path><path d="M9 20h6"></path></svg> Ajustements Textuels</h3>
+                                
+                                <div class="accessibility-group">
+                                    <label for="font-family">Police de caractere</label>
+                                    <select id="font-family" name="font-family" aria-label="Changer la police de caractere">
+                                        <option value="default">Police par defaut</option>
+                                        <option value="opendyslexic">OpenDyslexic (recommandee)</option>
+                                        <option value="lexend">Lexend (recommandee)</option>
+                                        <option value="arial">Arial</option>
+                                    </select>
+                                </div>
+
+                                <div class="accessibility-group">
+                                    <label for="font-size">Taille du texte</label>
+                                    <div class="range-input">
+                                        <button type="button" class="range-btn" id="font-size-minus" aria-label="Reduire la taille">-</button>
+                                        <input type="range" id="font-size" name="font-size" min="-15" max="25" value="0" step="1" aria-label="Taille du texte">
+                                        <span id="font-size-value" class="range-value">0%</span>
+                                        <button type="button" class="range-btn" id="font-size-plus" aria-label="Augmenter la taille">+</button>
+                                    </div>
+                                </div>
+
+                                <div class="accessibility-group">
+                                    <label for="line-height">Espacement des lignes</label>
+                                    <div class="range-input">
+                                        <button type="button" class="range-btn" id="line-height-minus" aria-label="Reduire l'espacement">-</button>
+                                        <input type="range" id="line-height" name="line-height" min="0" max="30" value="0" step="2" aria-label="Espacement des lignes">
+                                        <span id="line-height-value" class="range-value">0%</span>
+                                        <button type="button" class="range-btn" id="line-height-plus" aria-label="Augmenter l'espacement">+</button>
+                                    </div>
+                                </div>
+
+                                <div class="accessibility-group">
+                                    <label for="letter-spacing">Espacement des lettres</label>
+                                    <div class="range-input">
+                                        <button type="button" class="range-btn" id="letter-spacing-minus" aria-label="Reduire l'espacement">-</button>
+                                        <input type="range" id="letter-spacing" name="letter-spacing" min="0" max="15" value="0" step="1" aria-label="Espacement des lettres">
+                                        <span id="letter-spacing-value" class="range-value">0%</span>
+                                        <button type="button" class="range-btn" id="letter-spacing-plus" aria-label="Augmenter l'espacement">+</button>
+                                    </div>
+                                </div>
+
+                                <div class="accessibility-group">
+                                    <label for="word-spacing">Espacement des mots</label>
+                                    <div class="range-input">
+                                        <button type="button" class="range-btn" id="word-spacing-minus" aria-label="Reduire l'espacement">-</button>
+                                        <input type="range" id="word-spacing" name="word-spacing" min="0" max="25" value="0" step="1" aria-label="Espacement des mots">
+                                        <span id="word-spacing-value" class="range-value">0%</span>
+                                        <button type="button" class="range-btn" id="word-spacing-plus" aria-label="Augmenter l'espacement">+</button>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- Ajustements visuels -->
+                            <section class="accessibility-section">
+                                <h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="eye" aria-hidden="true" class="lucide lucide-eye"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"></path><circle cx="12" cy="12" r="3"></circle></svg> Ajustements Visuels</h3>
+                                
+                                <div class="accessibility-group">
+                                    <label for="brightness">Luminosite</label>
+                                    <div class="range-input">
+                                        <button type="button" class="range-btn" id="brightness-minus" aria-label="Reduire">-</button>
+                                        <input type="range" id="brightness" name="brightness" min="-30" max="30" value="0" step="2" aria-label="Luminosite">
+                                        <span id="brightness-value" class="range-value">0%</span>
+                                        <button type="button" class="range-btn" id="brightness-plus" aria-label="Augmenter">+</button>
+                                    </div>
+                                </div>
+
+                                <div class="accessibility-toggles">
+                                    <label class="accessibility-toggle">
+                                        <input type="checkbox" id="monochrome" name="monochrome" aria-label="Mode monochrome">
+                                        <span>Mode monochrome</span>
+                                    </label>
+                                    <label class="accessibility-toggle">
+                                        <input type="checkbox" id="reading-mask" name="reading-mask" aria-label="Masque de lecture">
+                                        <span>Masque de lecture</span>
+                                    </label>
+                                </div>
+
+                                <div class="accessibility-group">
+                                    <label for="mask-opacity">Intensite du masque</label>
+                                    <div class="range-input">
+                                        <button type="button" class="range-btn" id="mask-opacity-minus" aria-label="Reduire l'intensite">-</button>
+                                        <input type="range" id="mask-opacity" name="mask-opacity" min="10" max="70" value="40" step="5" aria-label="Intensite du masque de lecture">
+                                        <span id="mask-opacity-value" class="range-value">40%</span>
+                                        <button type="button" class="range-btn" id="mask-opacity-plus" aria-label="Augmenter l'intensite">+</button>
+                                    </div>
+                                </div>
+
+                                <div class="accessibility-group">
+                                    <label for="mask-height">Hauteur du masque</label>
+                                    <div class="range-input">
+                                        <button type="button" class="range-btn" id="mask-height-minus" aria-label="Reduire la hauteur">-</button>
+                                        <input type="range" id="mask-height" name="mask-height" min="20" max="48" value="40" step="2" aria-label="Hauteur du masque de lecture">
+                                        <span id="mask-height-value" class="range-value">40%</span>
+                                        <button type="button" class="range-btn" id="mask-height-plus" aria-label="Augmenter la hauteur">+</button>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- Colorisation pour dyslexie -->
+                            <section class="accessibility-section">
+                                <h3><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="palette" aria-hidden="true" class="lucide lucide-palette"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"></path><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"></circle><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"></circle></svg> Colorisation (Dyslexie)</h3>
+                                
+                                <div class="accessibility-toggles">
+                                    <fieldset class="radio-group" aria-label="Mode de colorisation">
+                                        <legend>Colorisation du texte</legend>
+                                        <label class="accessibility-radio">
+                                            <input type="radio" name="coloring-mode" id="color-none" value="none" checked="">
+                                            <span>Aucune</span>
+                                        </label>
+                                        <label class="accessibility-radio">
+                                            <input type="radio" name="coloring-mode" id="syllable-colors" value="syllables" aria-label="Colorer les syllabes">
+                                            <span>Syllabes colorees (bleu/rouge)</span>
+                                        </label>
+                                        <label class="accessibility-radio">
+                                            <input type="radio" name="coloring-mode" id="alternate-words" value="words" aria-label="Alterner couleurs des mots">
+                                            <span>Mots colores</span>
+                                        </label>
+                                    </fieldset>
+                                    <label class="accessibility-toggle">
+                                        <input type="checkbox" id="silent-letters" name="silent-letters" aria-label="Griser les lettres muettes">
+                                        <span>Griser les lettres muettes</span>
+                                    </label>
+                                </div>
+                            </section>
+                        </div>
+
+                        <div class="accessibility-footer">
+                            <button id="reset-accessibility" type="button" class="btn-secondary" aria-label="Reinitialiser tous les parametres">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="rotate-ccw" aria-hidden="true" class="lucide lucide-rotate-ccw"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+                                Reinitialiser
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                règle moi l'icone de empty-state pour qu'elle soit plus grande, j'ai une barre horizontale dans le menu d'accessibilité, le bouton fermer le doc reset les paramètres d'accesisibilité
