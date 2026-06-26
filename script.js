@@ -6,9 +6,10 @@ document.addEventListener("DOMContentLoaded", () => {
         "Cours/APIs.md",
         "Cours/Workflow.md",
         "Cours/PentestActiveDirectory.md", 
-        "ClubRadio Mauléon/Une Famille en Or.md"
+        "ClubRadio Mauléon/Une Famille en Or - Le Brief.md",
+        "ClubRadio Mauléon/Une Famille en Or version Grand Ouest - ClubRadio Mauléon (réponses).tsv"
     ];
-    const SUPPORTED_EXTENSIONS = new Set(["md", "txt", "csv"]);
+    const SUPPORTED_EXTENSIONS = new Set(["md", "txt", "csv", "tsv"]);
     const CANDIDATE_DIRS = ["./", "Cours/", "ClubRadio Mauléon/"];
 
     const appShell = document.getElementById("app-shell");
@@ -89,7 +90,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function iconByExtension(path) {
         const ext = getFileExtension(path);
-        if (ext === "csv") {
+        if (ext === "csv" || ext === "tsv") {
             return "table-properties";
         }
         if (ext === "txt") {
@@ -116,7 +117,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function formatDocLabel(path) {
         const fileName = path.split("/").pop() || path;
-        return fileName.replace(/\.(md|txt|csv)$/i, "").replace(/[_-]+/g, " ").trim();
+        return fileName.replace(/\.(md|txt|csv|tsv)$/i, "").replace(/[_-]+/g, " ").trim();
     }
 
     function getGroupName(path) {
@@ -218,7 +219,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return normalizeIgnoreValue(firstMeaningfulLine) === "||fichier a ignorer||";
         }
 
-        if (normalizedExt === "csv") {
+        if (normalizedExt === "csv" || normalizedExt === "tsv") {
             const firstDataLine = source
                 .replace(/^\uFEFF/, "")
                 .split(/\r?\n/)
@@ -232,7 +233,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const commaCount = (firstDataLine.match(/,/g) || []).length;
             const semicolonCount = (firstDataLine.match(/;/g) || []).length;
             const tabCount = (firstDataLine.match(/\t/g) || []).length;
-            const delimiter = semicolonCount > commaCount && semicolonCount >= tabCount ? ";" : tabCount > commaCount ? "\t" : ",";
+            const delimiter = normalizedExt === "tsv"
+                ? "\t"
+                : (semicolonCount > commaCount && semicolonCount >= tabCount ? ";" : tabCount > commaCount ? "\t" : ",");
             const firstCell = (parseCsvLine(firstDataLine, delimiter)[0] || "").trim();
             return normalizeIgnoreValue(firstCell) === "fichier a ignorer";
         }
@@ -342,19 +345,116 @@ document.addEventListener("DOMContentLoaded", () => {
         return sanitizePath(path).replace(/\.[a-z0-9]+$/i, "");
     }
 
-    function resolveDocumentFromLocation(files) {
-        const fromPathname = sanitizePath(decodeURIComponent(window.location.pathname || "/"));
-        if (!fromPathname) {
+    function matchFilePath(files, candidatePath) {
+        const safe = sanitizePath(candidatePath || "");
+        if (!safe) {
             return null;
         }
-
-        const exact = files.find((file) => sanitizePath(file).toLowerCase() === fromPathname.toLowerCase());
+        const exact = files.find((file) => sanitizePath(file).toLowerCase() === safe.toLowerCase());
         if (exact) {
             return exact;
         }
+        const withoutExt = safe.replace(/\.[a-z0-9]+$/i, "");
+        return files.find((file) => stripExtension(file).toLowerCase() === withoutExt.toLowerCase()) || null;
+    }
 
-        const withoutExtPath = fromPathname.replace(/\.[a-z0-9]+$/i, "");
-        return files.find((file) => stripExtension(file).toLowerCase() === withoutExtPath.toLowerCase()) || null;
+    function safeDecode(value) {
+        try {
+            return decodeURIComponent(value);
+        } catch {
+            return value;
+        }
+    }
+
+    // Routage par hash (#/chemin/du/doc[#section]) : seul "/" est demandé au
+    // serveur, le chemin réel du document reste dans le fragment d'URL. Les liens
+    // de partage ne peuvent donc jamais être cassés par une 404 GitHub Pages.
+    function resolveDocumentFromLocation(files) {
+        const rawHash = window.location.hash || "";
+
+        if (rawHash.startsWith("#/")) {
+            const body = rawHash.slice(2);
+            const sectionDelimiter = body.indexOf("#");
+            const encodedPath = sectionDelimiter >= 0 ? body.slice(0, sectionDelimiter) : body;
+            const sectionRaw = sectionDelimiter >= 0 ? body.slice(sectionDelimiter + 1) : "";
+            const matched = matchFilePath(files, safeDecode(encodedPath));
+            if (matched) {
+                return { path: matched, section: safeDecode(sectionRaw) };
+            }
+            return null;
+        }
+
+        if (rawHash.startsWith("#")) {
+            const sectionRaw = safeDecode(rawHash.slice(1));
+            if (activePath) {
+                return { path: activePath, section: sectionRaw };
+            }
+            let fallbackDoc = null;
+            try {
+                fallbackDoc = localStorage.getItem(LAST_DOC_KEY) || sessionStorage.getItem(LAST_DOC_KEY);
+            } catch (e) {}
+            
+            if (fallbackDoc && fallbackDoc !== CLOSED_DOC_SENTINEL) {
+                const matched = matchFilePath(files, fallbackDoc);
+                if (matched) {
+                    return { path: matched, section: sectionRaw };
+                }
+            }
+        }
+
+        const fromPathname = sanitizePath(safeDecode(window.location.pathname || "/"));
+        const matched = matchFilePath(files, fromPathname);
+        return matched ? { path: matched, section: "" } : null;
+    }
+
+    function buildRouteHash(path, section) {
+        let route = `#/${encodePath(path)}`;
+        if (section) {
+            route += `#${encodeURIComponent(section)}`;
+        }
+        return route;
+    }
+
+    function applyDocumentRoute(path, section, mode) {
+        const method = mode === "replace" ? "replaceState" : "pushState";
+        const state = { docPath: sanitizePath(path), section: section || "" };
+        history[method](state, "", buildRouteHash(path, section));
+    }
+
+    function clearDocumentRoute(mode) {
+        const method = mode === "replace" ? "replaceState" : "pushState";
+        const base = (window.location.pathname || "/") + (window.location.search || "");
+        history[method](null, "", base || "/");
+    }
+
+    function scrollToSection(section) {
+        const raw = (section || "").toString().trim();
+        if (!raw) {
+            return false;
+        }
+        const lower = raw.toLowerCase();
+        const deaccented = lower.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const candidates = Array.from(new Set([raw, lower, deaccented].filter(Boolean)));
+
+        let target = null;
+        for (const candidate of candidates) {
+            const safe = window.CSS && typeof CSS.escape === "function" ? CSS.escape(candidate) : candidate;
+            target = document.getElementById(candidate) || renderArea.querySelector(`[id="${safe}"]`);
+            if (target) {
+                break;
+            }
+        }
+
+        if (!target) {
+            const headings = Array.from(renderArea.querySelectorAll("h1, h2, h3, h4, h5, h6"));
+            target = headings.find((heading) => (heading.id || "").toLowerCase() === deaccented) || null;
+        }
+
+        if (target) {
+            target.scrollIntoView({ behavior: "smooth", block: "start" });
+            return true;
+        }
+        return false;
     }
 
     function getDefaultDocument(files) {
@@ -866,18 +966,33 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         renderArea.querySelectorAll("a[href^='#']").forEach((link) => {
-            const hash = decodeURIComponent((link.getAttribute("href") || "").slice(1)).toLowerCase();
-            if (!hash) {
-                return;
+            const rawHash = decodeURIComponent((link.getAttribute("href") || "").slice(1));
+            const hash = rawHash.toLowerCase();
+            // Les ancres écrites en style GitHub conservent les accents (é, à, ...),
+            // alors que les identifiants générés sont désaccentués. On compare donc
+            // aussi une version sans accents pour faire correspondre les deux.
+            const deaccentedHash = hash.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            const targetId = aliasMap.get(hash) || aliasMap.get(deaccentedHash) || rawHash;
+            if (rawHash) {
+                link.setAttribute("href", `#${targetId}`);
             }
-            const targetId = aliasMap.get(hash) || hash;
-            link.setAttribute("href", `#${targetId}`);
             link.addEventListener("click", (event) => {
+                // Avec <base href="/">, le comportement par défaut d'une ancre "#section"
+                // renvoie vers la racine du site (sur GitHub Pages notamment). On gère donc
+                // le défilement manuellement pour rester dans le document courant.
+                event.preventDefault();
                 const id = decodeURIComponent((link.getAttribute("href") || "").slice(1));
-                const target = document.getElementById(id);
+                if (!id) {
+                    return;
+                }
+                const safeId = window.CSS && typeof CSS.escape === "function" ? CSS.escape(id) : id;
+                const target = document.getElementById(id) || renderArea.querySelector(`[id="${safeId}"]`);
                 if (target) {
-                    event.preventDefault();
                     target.scrollIntoView({ behavior: "smooth", block: "start" });
+                    if (activePath) {
+                        // Met à jour l'URL partageable avec la section, sans empiler l'historique.
+                        applyDocumentRoute(activePath, id, "replace");
+                    }
                 }
             });
         });
@@ -1060,16 +1175,17 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    function renderCsvTable(raw) {
+    function renderCsvTable(raw, forcedDelimiter) {
         const rows = raw.split(/\r?\n/).filter((line) => line.trim().length);
         if (!rows.length) {
-            return "<p>Fichier CSV vide.</p>";
+            return "<p>Fichier vide.</p>";
         }
         const firstLine = rows[0] || "";
         const commaCount = (firstLine.match(/,/g) || []).length;
         const semicolonCount = (firstLine.match(/;/g) || []).length;
         const tabCount = (firstLine.match(/\t/g) || []).length;
-        const delimiter = semicolonCount > commaCount && semicolonCount >= tabCount ? ";" : tabCount > commaCount ? "\t" : ",";
+        const delimiter = forcedDelimiter
+            || (semicolonCount > commaCount && semicolonCount >= tabCount ? ";" : tabCount > commaCount ? "\t" : ",");
         const parsedRows = rows.map((line) => parseCsvLine(line, delimiter));
         const headers = parsedRows[0];
         const bodyRows = parsedRows.slice(1);
@@ -1081,6 +1197,9 @@ document.addEventListener("DOMContentLoaded", () => {
     function renderEmptyFileMessage(ext) {
         if (ext === "csv") {
             return "<p>Fichier CSV vide.</p>";
+        }
+        if (ext === "tsv") {
+            return "<p>Fichier TSV vide.</p>";
         }
         if (ext === "md") {
             return "<p>Fichier Markdown vide.</p>";
@@ -1104,13 +1223,12 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (updateHistory) {
-            const method = historyMode === "replace" ? "replaceState" : "pushState";
-            history[method](null, "", "/");
+            clearDocumentRoute(historyMode);
         }
     }
 
     async function loadDocument(path, options = {}) {
-        const { updateHistory = true, historyMode = "push" } = options;
+        const { updateHistory = true, historyMode = "push", section = "" } = options;
         const safePath = sanitizePath(path);
         const ext = getFileExtension(safePath);
         activePath = safePath;
@@ -1137,8 +1255,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 renderArea.innerHTML = sanitized;
                 normalizeAnchors();
                 enhanceExternalLinks();
-            } else if (ext === "csv") {
-                renderArea.innerHTML = renderCsvTable(payload);
+            } else if (ext === "csv" || ext === "tsv") {
+                renderArea.innerHTML = renderCsvTable(payload, ext === "tsv" ? "\t" : "");
             } else {
                 renderArea.innerHTML = `<pre>${escapeHtml(payload)}</pre>`;
             }
@@ -1161,8 +1279,15 @@ document.addEventListener("DOMContentLoaded", () => {
             originalMarkdownContent = renderArea.innerHTML;
             applyAccessibilitySettings();
 
-            // Restaurer la position du scroll pour ce document
-            if (hasConsent) {
+            if (updateHistory) {
+                applyDocumentRoute(safePath, section, historyMode);
+            }
+
+            if (section) {
+                // Lien de partage pointant vers une section précise : on la rejoint.
+                setTimeout(() => scrollToSection(section), 0);
+            } else if (hasConsent) {
+                // Restaurer la position du scroll pour ce document
                 setTimeout(() => {
                     const scrollData = localStorage.getItem(SCROLL_POSITION_KEY);
                     if (scrollData) {
@@ -1432,9 +1557,15 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         window.addEventListener("popstate", async () => {
-            const fromUrl = resolveDocumentFromLocation(allFiles);
-            if (fromUrl) {
-                await loadDocument(fromUrl, { updateHistory: false });
+            const resolved = resolveDocumentFromLocation(allFiles);
+            if (resolved && resolved.path) {
+                if (resolved.path === activePath) {
+                    scrollToSection(resolved.section);
+                    applyDocumentRoute(activePath, resolved.section, "replace");
+                } else {
+                    await loadDocument(resolved.path, { updateHistory: false, section: resolved.section });
+                    applyDocumentRoute(resolved.path, resolved.section, "replace");
+                }
                 return;
             }
             closeActiveDocument({ persistClosed: false, updateHistory: false });
@@ -1488,16 +1619,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (!allFiles.length) {
             docTitle.textContent = "Aucun document";
-            createStatus("empty-state", "Aucun document trouvé", "Placez des fichiers .md, .txt ou .csv dans les dossiers scannés : racine (./), Cours/ ou ClubRadio Mauléon/.");
+            createStatus("empty-state", "Aucun document trouvé", "Placez des fichiers .md, .txt, .csv ou .tsv dans les dossiers scannés : racine (./), Cours/ ou ClubRadio Mauléon/.");
             return;
         }
 
-        const fromUrl = resolveDocumentFromLocation(allFiles);
+        const resolved = resolveDocumentFromLocation(allFiles);
         const storedLastDoc = readStoredLastDoc();
         const defaultDoc = getDefaultDocument(allFiles);
 
-        if (fromUrl) {
-            await loadDocument(fromUrl, { updateHistory: false, historyMode: "replace" });
+        if (resolved && resolved.path) {
+            await loadDocument(resolved.path, { historyMode: "replace", section: resolved.section });
             return;
         }
 
