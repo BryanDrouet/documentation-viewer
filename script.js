@@ -21,7 +21,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const sidebarPanels = document.querySelectorAll(".sidebar-panel");
     const renderArea = document.getElementById("markdown-render");
     const docTitle = document.getElementById("doc-title");
-    const globalSearchInput = document.getElementById("global-search");
     const menuToggle = document.getElementById("menu-toggle");
     const sidebarToggle = document.getElementById("sidebar-toggle");
     const closeDocumentButton = document.getElementById("close-document");
@@ -46,11 +45,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let allFiles = [];
     let activePath = "";
-    let currentQuery = "";
     let hasConsent = false;
     let directoryListingAvailable = false;
-    let indexingInProgress = false;
-    const contentIndex = new Map();
     const collapsedGroups = new Set();
     const THEME_MODES = ["system", "light", "dark"];
     const SIDEBAR_WIDTH_KEY = "md_reader_sidebar_width_v1";
@@ -790,45 +786,6 @@ document.addEventListener("DOMContentLoaded", () => {
             .sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
     }
 
-    function getContentMatch(path, query) {
-        if (!query) {
-            return null;
-        }
-        const source = (contentIndex.get(path) || "").toLowerCase();
-        if (!source) {
-            return null;
-        }
-        const index = source.indexOf(query.toLowerCase());
-        if (index < 0) {
-            return null;
-        }
-        return index;
-    }
-
-    async function buildContentIndex(files) {
-        if (indexingInProgress) {
-            return;
-        }
-        indexingInProgress = true;
-        await Promise.all(
-            files.map(async (path) => {
-                if (contentIndex.has(path)) {
-                    return;
-                }
-                try {
-                    const response = await fetch(encodePath(path), { cache: "no-store" });
-                    if (!response.ok) {
-                        return;
-                    }
-                    const text = await response.text();
-                    contentIndex.set(path, text);
-                } catch {
-                }
-            })
-        );
-        indexingInProgress = false;
-    }
-
     function renderTree(files) {
         if (!files.length) {
             docsTree.innerHTML = "<p class=\"group-title\">Aucun document détecté.</p>";
@@ -851,24 +808,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const html = groups
             .map((group) => {
                 const groupItems = grouped[group]
-                    .filter((path) => {
-                        const normalizedQuery = currentQuery.toLowerCase();
-                        const fileTarget = `${path} ${formatDocLabel(path)}`.toLowerCase();
-                        const isFileMatch = !normalizedQuery || fileTarget.includes(normalizedQuery);
-                        if (!normalizedQuery) {
-                            return isFileMatch;
-                        }
-                        const isContentMatch = getContentMatch(path, normalizedQuery) !== null;
-                        return isFileMatch || isContentMatch;
-                    })
                     .map((path, idx) => {
                         const activeClass = path === activePath ? "active" : "";
-                        const normalizedQuery = currentQuery.toLowerCase();
-                        const contentMatch = normalizedQuery && getContentMatch(path, normalizedQuery) !== null;
-                        const contentClass = contentMatch ? "match-content" : "";
                         const label = formatDocLabel(path);
                         return `
-                            <button type="button" class="doc-item ${activeClass} ${contentClass}" data-path="${path}" style="animation-delay:${idx * 22}ms" aria-label="Ouvrir ${escapeHtml(label)}">
+                            <button type="button" class="doc-item ${activeClass}" data-path="${path}" style="animation-delay:${idx * 22}ms" aria-label="Ouvrir ${escapeHtml(label)}">
                                 <span class="left">
                                     <i data-lucide="${iconByExtension(path)}"></i>
                                     <span class="title">${escapeHtml(label)}</span>
@@ -903,7 +847,7 @@ document.addEventListener("DOMContentLoaded", () => {
             })
             .join("");
 
-        docsTree.innerHTML = html || "<p class=\"group-title\">Aucun résultat pour cette recherche.</p>";
+        docsTree.innerHTML = html;
 
         docsTree.querySelectorAll(".doc-item").forEach((button) => {
             button.addEventListener("click", () => {
@@ -932,6 +876,16 @@ document.addEventListener("DOMContentLoaded", () => {
         if (window.lucide) {
             lucide.createIcons();
         }
+    }
+
+    function updateActiveTreeItem() {
+        docsTree.querySelectorAll(".doc-item").forEach((btn) => {
+            if (btn.dataset.path === activePath) {
+                btn.classList.add("active");
+            } else {
+                btn.classList.remove("active");
+            }
+        });
     }
 
     function slugifyHeading(text) {
@@ -1213,7 +1167,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function closeActiveDocument(options = {}) {
         const { persistClosed = true, updateHistory = true, historyMode = "push" } = options;
         activePath = "";
-        renderTree(allFiles);
+        updateActiveTreeItem();
         docTitle.textContent = "Aucun document";
         createStatus("empty-state", "Document fermé", "Sélectionnez un document dans l'onglet Documents.");
         originalMarkdownContent = renderArea.innerHTML;
@@ -1239,7 +1193,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const ext = getFileExtension(safePath);
         activePath = safePath;
 
-        renderTree(allFiles);
+        updateActiveTreeItem();
         renderLoading("Chargement du document...");
 
         try {
@@ -1278,10 +1232,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 lucide.createIcons();
             }
 
-            if (currentQuery) {
-                highlightInViewer(currentQuery);
-            }
-
             originalMarkdownContent = renderArea.innerHTML;
             applyAccessibilitySettings();
 
@@ -1294,10 +1244,8 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             if (section) {
-                // Lien de partage pointant vers une section précise : on la rejoint.
                 setTimeout(() => scrollToSection(section), 0);
             } else if (hasConsent) {
-                // Restaurer la position du scroll pour ce document
                 setTimeout(() => {
                     const scrollData = localStorage.getItem(SCROLL_POSITION_KEY);
                     if (scrollData) {
@@ -1307,7 +1255,6 @@ document.addEventListener("DOMContentLoaded", () => {
                                 renderArea.parentElement.scrollTop = position;
                             }
                         } catch (e) {
-                            // Ignorer les données corrompues
                         }
                     }
                 }, 0);
@@ -1316,61 +1263,6 @@ document.addEventListener("DOMContentLoaded", () => {
             docTitle.textContent = "Document indisponible";
             createStatus("error-state", "404 - Fichier introuvable", `Le document ${safePath} n'a pas pu être chargé.`);
         }
-    }
-
-    function removeMarks() {
-        const marks = renderArea.querySelectorAll("mark[data-md-search='1']");
-        marks.forEach((mark) => {
-            const textNode = document.createTextNode(mark.textContent || "");
-            mark.replaceWith(textNode);
-        });
-    }
-
-    function highlightInViewer(term) {
-        removeMarks();
-        const normalizedTerm = term.trim();
-        if (!normalizedTerm) {
-            return;
-        }
-        const walker = document.createTreeWalker(renderArea, NodeFilter.SHOW_TEXT);
-        const regex = new RegExp(normalizedTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "ig");
-        const nodes = [];
-
-        while (walker.nextNode()) {
-            const node = walker.currentNode;
-            if (!node.nodeValue || !node.nodeValue.trim()) {
-                continue;
-            }
-            const parentTag = node.parentElement ? node.parentElement.tagName : "";
-            if (["SCRIPT", "STYLE", "MARK", "CODE"].includes(parentTag)) {
-                continue;
-            }
-            if (regex.test(node.nodeValue)) {
-                nodes.push(node);
-            }
-            regex.lastIndex = 0;
-        }
-
-        nodes.forEach((node) => {
-            const value = node.nodeValue || "";
-            const fragment = document.createDocumentFragment();
-            let lastIndex = 0;
-            value.replace(regex, (match, index) => {
-                if (index > lastIndex) {
-                    fragment.appendChild(document.createTextNode(value.slice(lastIndex, index)));
-                }
-                const mark = document.createElement("mark");
-                mark.setAttribute("data-md-search", "1");
-                mark.textContent = match;
-                fragment.appendChild(mark);
-                lastIndex = index + match.length;
-                return match;
-            });
-            if (lastIndex < value.length) {
-                fragment.appendChild(document.createTextNode(value.slice(lastIndex)));
-            }
-            node.replaceWith(fragment);
-        });
     }
 
     function initializeConsent() {
@@ -1600,7 +1492,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             isDesktopSidebarCollapsed = localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1";
             
-            // Restaurer l'état du menu mobile
             const isMenuOpen = localStorage.getItem(MENU_OPEN_KEY) === "1";
             if (isMenuOpen) {
                 appShell.classList.add("sidebar-open");
@@ -1613,7 +1504,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         renderLoading("Détection des documents...");
         allFiles = await discoverMarkdownFiles();
-        await buildContentIndex(allFiles);
         renderTree(allFiles);
 
         if (!allFiles.length) {
