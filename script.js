@@ -1215,8 +1215,14 @@ document.addEventListener("DOMContentLoaded", () => {
         activePath = "";
         renderTree(allFiles);
         docTitle.textContent = "Aucun document";
-        createStatus("empty-state", "Document ferme", "Selectionnez un document dans l'onglet Documents.");
+        createStatus("empty-state", "Document fermé", "Sélectionnez un document dans l'onglet Documents.");
         originalMarkdownContent = renderArea.innerHTML;
+        
+        applyAccessibilitySettings();
+
+        if (closeDocumentButton) {
+            closeDocumentButton.hidden = true;
+        }
 
         if (persistClosed) {
             persistLastDoc(CLOSED_DOC_SENTINEL);
@@ -1278,6 +1284,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
             originalMarkdownContent = renderArea.innerHTML;
             applyAccessibilitySettings();
+
+            if (closeDocumentButton) {
+                closeDocumentButton.hidden = false;
+            }
 
             if (updateHistory) {
                 applyDocumentRoute(safePath, section, historyMode);
@@ -1404,17 +1414,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function initializeEvents() {
-        globalSearchInput.addEventListener("input", async (event) => {
-            currentQuery = event.target.value.trim();
-            if (currentQuery && !contentIndex.size) {
-                await buildContentIndex(allFiles);
-            }
-            renderTree(allFiles);
-            if (activePath) {
-                highlightInViewer(currentQuery);
-            }
-        });
-
         menuToggle.addEventListener("click", () => {
             appShell.classList.add("sidebar-open");
             mobileDim.classList.add("visible");

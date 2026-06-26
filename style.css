@@ -525,6 +525,10 @@ body {
     justify-content: flex-end;
 }
 
+.head-actions [hidden] {
+    display: none !important;
+}
+
 .viewer-wrap {
     height: 100%;
     overflow: auto;
@@ -806,9 +810,14 @@ body {
 }
 
 .status i,
+.status svg,
 .empty-state i,
-.error-state i {
+.empty-state svg,
+.error-state i,
+.error-state svg {
     color: var(--accent);
+    width: 4.5rem;
+    height: 4.5rem;
 }
 
 .btn-primary,

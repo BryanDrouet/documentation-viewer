@@ -36,7 +36,7 @@ L'ordre de parole au sein d'une équipe doit être **linéaire** (Joueur 1, Joue
 L'animateur appelle le représentant de chaque équipe (les chefs au Round 1, puis les Joueurs 2 au Round 2, etc.).
 L'animateur annonce la question. Le premier joueur qui tape sur la table prend la parole.
 
-⚠️ **Attention :** L'utilisation des cartes bonus n'est absolument pas autorisée lors de cette étape.
+⚠️ **Attention :** L'utilisation des cartes bonus n'est pas autorisée lors de cette étape.
 
 * **Cas A :** Il trouve la réponse numéro 1 (Top Réponse). Son équipe prend immédiatement la main pour la manche.
 * **Cas B :** Il trouve une réponse présente mais pas la première. L'autre joueur du face-à-face peut donner une réponse :
@@ -59,9 +59,6 @@ Si l'équipe en main fait 3 erreurs, l'équipe adverse peut voler les points de 
 * **Cas A (Succès) :** La réponse est dans le tableau. L'équipe adverse réussit le vol et récupère l'intégralité des points de la cagnotte centrale + les points de la réponse dévoilée.
 * **Cas B (Échec) :** La réponse n'est pas dans le tableau. Le vol échoue. L'équipe initiale (qui avait fait 3 erreurs) conserve l'intégralité des points accumulés dans la cagnotte centrale.
 
-### 2.4 Étape 4 : Validation sur TriviaMaker
-Une fois la manche terminée, l'animateur clique sur la coche verte de validation (à côté du score central) associée à l'équipe qui a gagné le Round pour lui attribuer définitivement les points.
-
 ---
 
 ## 3. Les cartes bonus
@@ -70,17 +67,17 @@ Chaque équipe dispose de **5 cartes bonus** exploitables sur l'ensemble de la p
 
 * **L'appel à un ami :** L'équipe appelle en direct un contact téléphonique pour obtenir de l'aide sur la réponse à donner (limité à 30 secondes).
 * **Les lettres révélatrices :** L'animateur dévoile la première et la dernière lettre de la réponse la plus haute encore cachée dans le tableau.
-* **L'avis du public :** L'animateur sollicite le public présent à l'Espace Jeunesse (à main levée ou au bruit) pour orienter l'équipe.
-* **La réponse d'un ARJ :** L'équipe choisit un Animateur Réseau Jeunesse parmi Florian, David ou Morgane. L'animateur dévoile la réponse précise que cet ARJ avait donnée lors du sondage (si applicable).
-* **L'indice contextuel :** Bryan donne un indice verbal ou contextuel subtil sur la réponse la mieux classée encore cachée.
+* **L'avis du public :** L'animateur sollicite le public présent à l'Espace Jeunesse pour orienter l'équipe.
+* **La réponse d'un ARJ :** L'équipe choisit un Animateur Référent Jeunesse parmi Florian, David ou Morgane. L'animateur dévoile la réponse précise que cet ARJ avait donnée lors du sondage.
+* **L'indice contextuel :** L'animateur donne un indice verbal ou contextuel subtil sur la réponse la mieux classée encore cachée.
 
 ---
 
 ## 4. Gestion des cas particuliers et égalités
 
 ### 4.1 Réponses litigieuses
-* **Réponse absente ou hors-sujet :** Génère un Strike immédiat sur l'écran de contrôle via l'icône des croix.
-* **Réponses synonymes :** Si un candidat donne un mot très proche ou un synonyme exact d'une réponse cachée, l'animateur peut l'accepter et cliquer sur la case correspondante pour la révéler.
+* **Réponse absente ou hors-sujet :** Génère un Strike.
+* **Réponses synonymes :** Si un candidat donne un mot très proche ou un synonyme exact d'une réponse cachée, l'animateur peut l'accepter la réponse.
 
 ### 4.2 Mort Subite
 Si les deux familles ont **exactement le même score** après les 7 questions, une manche de Mort Subite est lancée. Un face-à-face suprême a lieu entre les deux chefs sur une question bonus de rapidité : le premier qui trouve une réponse correcte du tableau (ou la réponse la plus haute) fait gagner son équipe.
@@ -89,15 +86,15 @@ Si les deux familles ont **exactement le même score** après les 7 questions, u
 
 ## 5. Récompenses et dotations
 
-L'issue de la finale détermine la répartition des lots pour les équipes. Le lot est remporté pour l'ensemble des 4 membres de l'équipe.
+L'issue de la finale détermine la répartition des lots pour les équipes. Le lot est remporté pour la personne venue du public.
 
 ### 5.1 Équipe Gagnante
-Le Chef d'équipe choisit en premier entre les deux récompenses suivantes :
+La personne venue du public choisie en premier entre les deux récompenses suivantes :
 * **Option A :** 1 planche apéro gratuite (valable pour la guinguette du 12 juillet).
 * **Option B :** 2 repas gratuits (valables pour l'événement du 13 juillet).
 
 ### 5.2 Équipe Perdante
-Elle repart automatiquement avec le lot restant qui n'a pas été sélectionné par l'équipe gagnante.
+Elle repart automatiquement avec le lot restant qui n'a pas été sélectionné.
 
 ---
 
