@@ -5,11 +5,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const FALLBACK_FILES = [
         "Cours/APIs.md",
         "Cours/Workflow.md",
-        "Cours/PentestActiveDirectory.md", 
-        "ClubRadio Mauléon/Une Famille en Or - Le Brief.md",
+        "Cours/Pentest-Active-Directory.md", 
+        "ClubRadio-Mauléon/Une-Famille-en-Or_Le-Brief.md",
+        "ClubRadio-Mauléon/Une-Famille-en-Or_Les-réponses.tsv"
     ];
     const SUPPORTED_EXTENSIONS = new Set(["md", "txt", "csv", "tsv"]);
-    const CANDIDATE_DIRS = ["./", "Cours/", "ClubRadio Mauléon/"];
+    const CANDIDATE_DIRS = ["./", "Cours/", "ClubRadio-Mauléon/"];
 
     const appShell = document.getElementById("app-shell");
     const sidebar = document.getElementById("sidebar");
