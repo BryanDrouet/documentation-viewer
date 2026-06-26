@@ -7,7 +7,6 @@ document.addEventListener("DOMContentLoaded", () => {
         "Cours/Workflow.md",
         "Cours/PentestActiveDirectory.md", 
         "ClubRadio Mauléon/Une Famille en Or - Le Brief.md",
-        "ClubRadio Mauléon/Une Famille en Or version Grand Ouest - ClubRadio Mauléon (réponses).tsv"
     ];
     const SUPPORTED_EXTENSIONS = new Set(["md", "txt", "csv", "tsv"]);
     const CANDIDATE_DIRS = ["./", "Cours/", "ClubRadio Mauléon/"];
