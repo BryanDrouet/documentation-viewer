@@ -3,12 +3,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const THEME_KEY = "md_reader_theme_v1";
     const LAST_DOC_KEY = "md_reader_last_doc_v1";
     const FALLBACK_FILES = [
-        "cours/APIs.md",
-        "cours/Workflow.md",
-        "cours/PentestActiveDirectory.md"
+        "Cours/APIs.md",
+        "Cours/Workflow.md",
+        "Cours/PentestActiveDirectory.md", 
+        "ClubRadio Mauléon/Une Famille en Or.md"
     ];
     const SUPPORTED_EXTENSIONS = new Set(["md", "txt", "csv"]);
-    const CANDIDATE_DIRS = ["./", "cours/"];
+    const CANDIDATE_DIRS = ["./", "Cours/", "ClubRadio Mauléon/"];
 
     const appShell = document.getElementById("app-shell");
     const sidebar = document.getElementById("sidebar");
@@ -339,11 +340,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function stripExtension(path) {
         return sanitizePath(path).replace(/\.[a-z0-9]+$/i, "");
-    }
-
-    function toSharePath(path) {
-        const stem = stripExtension(path);
-        return stem ? `/${stem}` : "/";
     }
 
     function resolveDocumentFromLocation(files) {
@@ -1119,12 +1115,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const ext = getFileExtension(safePath);
         activePath = safePath;
 
-        if (updateHistory) {
-            const targetUrl = toSharePath(safePath);
-            const method = historyMode === "replace" ? "replaceState" : "pushState";
-            history[method](null, "", targetUrl);
-        }
-
         renderTree(allFiles);
         renderLoading("Chargement du document...");
 
@@ -1498,7 +1488,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (!allFiles.length) {
             docTitle.textContent = "Aucun document";
-            createStatus("empty-state", "Aucun document trouvé", "Placez des fichiers .md, .txt ou .csv dans les dossiers scannés : racine (./), cours/ ou stage-Bryan/.");
+            createStatus("empty-state", "Aucun document trouvé", "Placez des fichiers .md, .txt ou .csv dans les dossiers scannés : racine (./), Cours/ ou ClubRadio Mauléon/.");
             return;
         }
 
